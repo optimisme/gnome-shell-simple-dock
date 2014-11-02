@@ -288,12 +288,15 @@ const ModifiedMessageTray = new Lang.Class({
 // < SimpleDock
 
 // > SimpleDock (Disable Message tray)
+        if("_trayPressure" in LayoutManager) {
+            LayoutManager._trayPressure._keybindingMode = Shell.KeyBindingMode.NORMAL | Shell.KeyBindingMode.OVERVIEW;
+        }
         if(this.originalDwell !== null) {
             MessageTray._trayDwellTimeout = this.originalDwell;
         }
 		if (this.watcher !== null) {
 			let pointerWatcher = PointerWatcher.getPointerWatcher();
-        	pointerWatcher.removeWatch(this.watcher);
+        	pointerWatcher._removeWatch(this.watcher);
 		}
 // < SimpleDock
 		this.initialized = false;
