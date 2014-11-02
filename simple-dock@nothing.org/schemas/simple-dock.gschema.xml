@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schemalist gettext-domain="simple-dock">
+<schema path="/org/gnome/shell/extensions/simple-dock/" id="org.gnome.shell.extensions.simple-dock">
+    <key type="b" name="change-message-tray">
+        <default>true</default>
+        <summary>Adapt message bar and notifications</summary>
+        <description>Adds a message bar button and moves notifications to the top bar</description>
+    </key>
+    <key type="i" name="max-icon-size">
+        <default>48</default>
+        <summary>Maximum icon size</summary>
+        <description>Maximum icon size</description>
+    </key>
+</schema>
+</schemalist>
