@@ -1,11 +1,12 @@
-const Lang = imports.lang;
 const St = imports.gi.St;
 const Shell = imports.gi.Shell;
 const Config = imports.misc.config;
 const Main = imports.ui.main;
 const Mainloop = imports.mainloop;
 const MessageTray = Main.messageTray;
+const Lang = imports.lang;
 const LayoutManager = Main.layoutManager;
+const PointerWatcher = imports.ui.pointerWatcher;
 const Tweener = imports.ui.tweener;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
@@ -28,95 +29,96 @@ const Urgency = {
     HIGH: 2,
     CRITICAL: 3
 };
+const TRAY_DWELL_CHECK_INTERVAL = 100;
 
 let messageTray_showNotification = function() {
-        this._notification = this._notificationQueue.shift();
+    this._notification = this._notificationQueue.shift();
 
-        this._userActiveWhileNotificationShown = this.idleMonitor.get_idletime() <= IDLE_TIME;
-        if (!this._userActiveWhileNotificationShown) {
-            // If the user isn't active, set up a watch to let us know
-            // when the user becomes active.
-            this.idleMonitor.add_user_active_watch(Lang.bind(this, this._onIdleMonitorBecameActive));
-        }
+    this._userActiveWhileNotificationShown = this.idleMonitor.get_idletime() <= IDLE_TIME;
+    if (!this._userActiveWhileNotificationShown) {
+        // If the user isn't active, set up a watch to let us know
+        // when the user becomes active.
+        this.idleMonitor.add_user_active_watch(Lang.bind(this, this._onIdleMonitorBecameActive));
+    }
 
-        this._notificationClickedId = this._notification.connect('done-displaying',
-                                                                 Lang.bind(this, this._escapeTray));
-        this._notificationUnfocusedId = this._notification.connect('unfocused', Lang.bind(this, function() {
-            this._updateState();
-        }));
-        this._notificationBin.child = this._notification.actor;
+    this._notificationClickedId = this._notification.connect('done-displaying',
+                                                             Lang.bind(this, this._escapeTray));
+    this._notificationUnfocusedId = this._notification.connect('unfocused', Lang.bind(this, function() {
+        this._updateState();
+    }));
+    this._notificationBin.child = this._notification.actor;
 
-        this._notificationWidget.opacity = 0;
+    this._notificationWidget.opacity = 0;
 // > SimpleDock (Notifications to top)
-        // this._notificationWidget.y = 0;
-		let yTop = -global.screen_height;
-		let yBottom = 0;
-		this._notificationWidget.y = yTop;
+    // this._notificationWidget.y = 0;
+	let yTop = -global.screen_height;
+	let yBottom = 0;
+	this._notificationWidget.y = yTop;
 // < SimpleDock
-        this._notificationWidget.show();
+    this._notificationWidget.show();
 
-        this._updateShowingNotification();
+    this._updateShowingNotification();
 
-        let [x, y, mods] = global.get_pointer();
-        // We save the position of the mouse at the time when we started showing the notification
-        // in order to determine if the notification popped up under it. We make that check if
-        // the user starts moving the mouse and _onNotificationHoverChanged() gets called. We don't
-        // expand the notification if it just happened to pop up under the mouse unless the user
-        // explicitly mouses away from it and then mouses back in.
-        this._showNotificationMouseX = x;
-        this._showNotificationMouseY = y;
-        // We save the coordinates of the mouse at the time when we started showing the notification
-        // and then we update it in _notificationTimeout(). We don't pop down the notification if
-        // the mouse is moving towards it or within it.
-        this._lastSeenMouseX = x;
-        this._lastSeenMouseY = y;
+    let [x, y, mods] = global.get_pointer();
+    // We save the position of the mouse at the time when we started showing the notification
+    // in order to determine if the notification popped up under it. We make that check if
+    // the user starts moving the mouse and _onNotificationHoverChanged() gets called. We don't
+    // expand the notification if it just happened to pop up under the mouse unless the user
+    // explicitly mouses away from it and then mouses back in.
+    this._showNotificationMouseX = x;
+    this._showNotificationMouseY = y;
+    // We save the coordinates of the mouse at the time when we started showing the notification
+    // and then we update it in _notificationTimeout(). We don't pop down the notification if
+    // the mouse is moving towards it or within it.
+    this._lastSeenMouseX = x;
+    this._lastSeenMouseY = y;
 
-        this._resetNotificationLeftTimeout();
+    this._resetNotificationLeftTimeout();
 };
 
 let messageTray_hideNotification = function(animate) {
-        this._notificationFocusGrabber.ungrabFocus();
+    this._notificationFocusGrabber.ungrabFocus();
 
-        if (this._notificationExpandedId) {
-            this._notification.disconnect(this._notificationExpandedId);
-            this._notificationExpandedId = 0;
-        }
+    if (this._notificationExpandedId) {
+        this._notification.disconnect(this._notificationExpandedId);
+        this._notificationExpandedId = 0;
+    }
 // > SimpleDock (Notifications to top)
-		let yPos = -global.screen_height;
+	let yPos = -global.screen_height;
 // < SimpleDock
-        if (this._notificationClickedId) {
-            this._notification.disconnect(this._notificationClickedId);
-            this._notificationClickedId = 0;
-        }
-        if (this._notificationUnfocusedId) {
-            this._notification.disconnect(this._notificationUnfocusedId);
-            this._notificationUnfocusedId = 0;
-        }
+    if (this._notificationClickedId) {
+        this._notification.disconnect(this._notificationClickedId);
+        this._notificationClickedId = 0;
+    }
+    if (this._notificationUnfocusedId) {
+        this._notification.disconnect(this._notificationUnfocusedId);
+        this._notificationUnfocusedId = 0;
+    }
 
-        this._resetNotificationLeftTimeout();
+    this._resetNotificationLeftTimeout();
 
-        if (animate) {
-            this._tween(this._notificationWidget, '_notificationState', State.HIDDEN,
+    if (animate) {
+        this._tween(this._notificationWidget, '_notificationState', State.HIDDEN,
 // > SimpleDock (Notifications to top)
-                        // { y: this.actor.height,
-						{ y: yPos,
+                    // { y: this.actor.height,
+					{ y: yPos,
 // < SimpleDock
-                          opacity: 0,
-                          time: ANIMATION_TIME,
-                          transition: 'easeOutQuad',
-                          onComplete: this._hideNotificationCompleted,
-                          onCompleteScope: this
-                        });
-        } else {
-            Tweener.removeTweens(this._notificationWidget);
+                      opacity: 0,
+                      time: ANIMATION_TIME,
+                      transition: 'easeOutQuad',
+                      onComplete: this._hideNotificationCompleted,
+                      onCompleteScope: this
+                    });
+    } else {
+        Tweener.removeTweens(this._notificationWidget);
 // > SimpleDock (Notifications to top)
-            // this._notificationWidget.y = this.actor.height;
-			this._notificationWidget.y = yPos;
+        // this._notificationWidget.y = this.actor.height;
+		this._notificationWidget.y = yPos;
 // < SimpleDock
-            this._notificationWidget.opacity = 0;
-            this._notificationState = State.HIDDEN;
-            this._hideNotificationCompleted();
-        }
+        this._notificationWidget.opacity = 0;
+        this._notificationState = State.HIDDEN;
+        this._hideNotificationCompleted();
+    }
 };
 
 let messageTray_updateShowingNotification = function() {
@@ -168,59 +170,61 @@ let messageTray_updateShowingNotification = function() {
 
 let messageTray_onNotificationExpanded = function() {
 // > SimpleDock (Notifications to top)
-        // let expandedY = - this._notificationWidget.height;
-		let yTop = panel.y + panel.height - global.screen_height;
-		if (yTop < (-global.screen_height))
-		    yTop = -global.screen_height;
-		let yBottom = -this._notificationWidget.height;
-		let expandedY = yTop;
+    // let expandedY = - this._notificationWidget.height;
+	let yTop = panel.y + panel.height - global.screen_height;
+	if (yTop < (-global.screen_height))
+	    yTop = -global.screen_height;
+	let yBottom = -this._notificationWidget.height;
+	let expandedY = yTop;
 // < SimpleDock
-        this._closeButton.show();
+    this._closeButton.show();
 
-        // Don't animate the notification to its new position if it has shrunk:
-        // there will be a very visible "gap" that breaks the illusion.
-        if (this._notificationWidget.y < expandedY) {
-            this._notificationWidget.y = expandedY;
-        } else if (this._notification.y != expandedY) {
-            // Tween also opacity here, to override a possible tween that's
-            // currently hiding the notification.
-            Tweener.addTween(this._notificationWidget,
-                             { y: expandedY,
-                               opacity: 255,
-                               time: ANIMATION_TIME,
-                               transition: 'easeOutQuad',
-                               // HACK: Drive the state machine here better,
-                               // instead of overwriting tweens
-                               onComplete: Lang.bind(this, function() {
-                                   this._notificationState = State.SHOWN;
-                               }),
-                             });
-        }
+    // Don't animate the notification to its new position if it has shrunk:
+    // there will be a very visible "gap" that breaks the illusion.
+    if (this._notificationWidget.y < expandedY) {
+        this._notificationWidget.y = expandedY;
+    } else if (this._notification.y != expandedY) {
+        // Tween also opacity here, to override a possible tween that's
+        // currently hiding the notification.
+        Tweener.addTween(this._notificationWidget,
+                         { y: expandedY,
+                           opacity: 255,
+                           time: ANIMATION_TIME,
+                           transition: 'easeOutQuad',
+                           // HACK: Drive the state machine here better,
+                           // instead of overwriting tweens
+                           onComplete: Lang.bind(this, function() {
+                               this._notificationState = State.SHOWN;
+                           }),
+                         });
+    }
 };
 
 let messageTray_resetNotificationLeftTimeout = function() {
-        this._useLongerNotificationLeftTimeout = false;
-        if (this._notificationLeftTimeoutId) {
-            Mainloop.source_remove(this._notificationLeftTimeoutId);
-            this._notificationLeftTimeoutId = 0;
-            this._notificationLeftMouseX = -1;
-            this._notificationLeftMouseY = -1;
-        }
+    this._useLongerNotificationLeftTimeout = false;
+    if (this._notificationLeftTimeoutId) {
+        Mainloop.source_remove(this._notificationLeftTimeoutId);
+        this._notificationLeftTimeoutId = 0;
+        this._notificationLeftMouseX = -1;
+        this._notificationLeftMouseY = -1;
+    }
 };
 
 const ModifiedMessageTray = new Lang.Class({
     Name: 'ModifiedMessageTray',
 
     _init: function(enabled) {
+
         if (enabled) {
             this.enable(false);
         }
     },
 
 	initialize: function() {
+
 // > SimpleDock (Notifications to top)
 		this.testNotificationTimeout = undefined;
-		this.originalNotificationWidgetX = Main.messageTray._notificationWidget.x;
+		this.originalNotificationWidgetX = MessageTray._notificationWidget.x;
 		this.originalShowNotification = MessageTray._showNotification;
 		this.originalHideNotification = MessageTray._hideNotification;
 		this.originalUpdateShowingNotification = MessageTray._updateShowingNotification;
@@ -229,20 +233,9 @@ const ModifiedMessageTray = new Lang.Class({
 // < SimpleDock
 
 // > SimpleDock (Disable Message tray)
-	    this.originalDwell = 0;
-	    this.topButton = new St.Bin({ style_class: 'panel-button',
-	                                  reactive: true,
-	                                  can_focus: true,
-	                                  x_fill: true,
-	                                  y_fill: false,
-	                                  track_hover: true });
-	    let icon = new St.Icon({ icon_name: 'preferences-system-notifications-symbolic',
-	                             style_class: 'system-status-icon' });
-
-	    this.topButton.set_child(icon);
-	    this.topButtonSignal = this.topButton.connect('button-release-event', this.showMessageTray);
+		this.originalDwell = null;
+		this.watcher = null;
 // < SimpleDock
-
 		this.initialized = true;
 	},
 
@@ -263,13 +256,14 @@ const ModifiedMessageTray = new Lang.Class({
 // < SimpleDock
 
 // > SimpleDock (Disable Message tray)
-        this.originalDwell = MessageTray._trayDwellTimeout;
-        if("_trayPressure" in LayoutManager) {
+		this.originalDwell = MessageTray._trayDwellTimeout;
+		if("_trayPressure" in LayoutManager) {
             LayoutManager._trayPressure._keybindingMode = Shell.KeyBindingMode.OVERVIEW;
         }
-        
-        MessageTray._trayDwellTimeout = function() { return false; };
-	    Main.panel._rightBox.insert_child_at_index(this.topButton, 0);
+		MessageTray._trayDwellTimeout = function() { return false; };
+
+		let pointerWatcher = PointerWatcher.getPointerWatcher();
+        this.watcher = pointerWatcher.addWatch(TRAY_DWELL_CHECK_INTERVAL, this.checkPointer);
 // < SimpleDock
     },
 
@@ -294,15 +288,14 @@ const ModifiedMessageTray = new Lang.Class({
 // < SimpleDock
 
 // > SimpleDock (Disable Message tray)
-        if("_trayPressure" in LayoutManager) {
-            LayoutManager._trayPressure._keybindingMode = Shell.KeyBindingMode.NORMAL | Shell.KeyBindingMode.OVERVIEW;
-        }
-        if(this.originalDwell) {
+        if(this.originalDwell !== null) {
             MessageTray._trayDwellTimeout = this.originalDwell;
         }
-	    Main.panel._rightBox.remove_child(this.topButton);
+		if (this.watcher !== null) {
+			let pointerWatcher = PointerWatcher.getPointerWatcher();
+        	pointerWatcher.removeWatch(this.watcher);
+		}
 // < SimpleDock
-
 		this.initialized = false;
     },
 
@@ -330,6 +323,21 @@ const ModifiedMessageTray = new Lang.Class({
 	    } else {
 		    MessageTray.hide();
 	    }
+    },
+// < SimpleDock
+
+// > SimpleDock (Disable Message tray)
+    checkPointer: function (x, y) {
+		let monitor = Main.layoutManager.bottomMonitor;
+		let shouldDwell = (x >= monitor.x && x <= monitor.x + monitor.width &&
+						  	(x <= (monitor.x + 2) || x >= (monitor.x + monitor.width - 2)) &&
+		                  	y == monitor.y + monitor.height - 1);
+
+		if (shouldDwell) {
+			if (MessageTray._trayState === 0) {
+				MessageTray.openTray();
+			}
+		}
     }
 // < SimpleDock
 });
