@@ -332,9 +332,11 @@ const ModifiedMessageTray = new Lang.Class({
 // > SimpleDock (Disable Message tray)
     checkPointer: function (x, y) {
 		let monitor = Main.layoutManager.bottomMonitor;
-		let shouldDwell = (x >= monitor.x && x <= monitor.x + monitor.width &&
-						  	(x <= (monitor.x + 2) || x >= (monitor.x + monitor.width - 2)) &&
-		                  	y == monitor.y + monitor.height - 1);
+
+		if (y !== monitor.y + monitor.height - 1) return; // Prevent absurd calculations
+
+		let shouldDwell = (x >= monitor.x && x <= monitor.x + monitor.width
+				  && (x <= (monitor.x + 2) || x >= (monitor.x + monitor.width - 2)));
 
 		if (shouldDwell && MessageTray._trayState === 0) {
 			MessageTray.openTray();
