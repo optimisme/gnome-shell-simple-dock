@@ -20,7 +20,7 @@ With 'Firefox' or 'Gnome Web' from 'Gnome shell extensions webtool':
 
 https://extensions.gnome.org/extension/815/simple-dock/
 
-Manually:
+Manually (up to date version):
 
     cd ~
     git clone https://github.com/optimisme/gnome-shell-simple-dock.git
