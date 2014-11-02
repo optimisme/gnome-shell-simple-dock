@@ -6,7 +6,7 @@
   "shell-version": [
     "3.14"
   ], 
-  "url": "https://code.google.com/p/shell-simple-dock/", 
+  "url": "https://github.com/optimisme/gnome-shell-simple-dock", 
   "uuid": "simple-dock@nothing.org", 
   "version": 35
 }
