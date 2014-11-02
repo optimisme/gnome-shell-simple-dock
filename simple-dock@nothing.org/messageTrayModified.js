@@ -336,10 +336,8 @@ const ModifiedMessageTray = new Lang.Class({
 						  	(x <= (monitor.x + 2) || x >= (monitor.x + monitor.width - 2)) &&
 		                  	y == monitor.y + monitor.height - 1);
 
-		if (shouldDwell) {
-			if (MessageTray._trayState === 0) {
-				MessageTray.openTray();
-			}
+		if (shouldDwell && MessageTray._trayState === 0) {
+			MessageTray.openTray();
 		}
     }
 // < SimpleDock

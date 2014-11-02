@@ -54,8 +54,8 @@ function buildPrefsWidget() {
         settings.set_boolean(SETTINGS_CHANGE_MESSAGE_TRAY, button.active);
     });
 
-    settingLabel.set_tooltip_text(_("Adds a message bar button and moves notifications to the top bar"));
-    settingSwitch.set_tooltip_text(_("Adds a message bar button and moves notifications to the top bar"));
+    settingLabel.set_tooltip_text(_("Sets bottom message tray corners and moves notifications to the top bar"));
+    settingSwitch.set_tooltip_text(_("Sets bottom message tray corners and moves notifications to the top bar"));
 
     hbox1.pack_start(settingLabel, true, true, 0);
     hbox1.add(settingSwitch);
