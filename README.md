@@ -25,12 +25,9 @@ Manually (up to date version):
     cd ~
     git clone https://github.com/optimisme/gnome-shell-simple-dock.git
     cd gnome-shell-simple-dock
-    mkdir ~/.local/share/gnome-shell/extensions/simple-dock@nothing.org
-    cp simple-dock@nothing.org ~/.local/share/gnome-shell/extensions/simple-dock@nothing.org
-    cd ../
-    rm -rf gnome-shell-simple-dock
+    ./install.sh
 
-Then, open the 'shell command dialog' by pressing 'Alt-F2' (or 'Fn-Alt-F2' on Mac), type 'r' and press enter to reload 'Gnome shell'
+Then, use 'Gnome tweak tool' to activate the extension
 
 CUSTOMIZATION
 ------------
