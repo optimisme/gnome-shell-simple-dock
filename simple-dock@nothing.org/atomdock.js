@@ -32,15 +32,22 @@ const AtomDock = new Lang.Class({
 
         // initialize animation status object
         this._animStatus = new AnimationStatus(true);
+        this._animIgnore = false;
+
+        // Default background opacity
+        this._backgroundOpacity = -1;
 
         // Current autohide status
-        this._autohideStatus = false;
+        this._autoIntelliStatus = false;
 
         // Put dock on the primary monitor
         this._monitor = Main.layoutManager.primaryMonitor;
 
         // Used to store dock position for intellihide checking
         this.staticBox = new Clutter.ActorBox();
+
+        // Draw animation height for message tray
+        this.trayHeight = 0;
 
         // Create dash
         this.dash = new AtomDash.AtomDash();
@@ -84,35 +91,44 @@ const AtomDock = new Lang.Class({
                 Main.overview,
                 'showing',
                 Lang.bind(this, function() {
-                    this._setTransparent();
-                    /* Switch actor group to ensure
-                     * Dock gets shifted up in overview*/
-                    global.window_group.remove_child(this.actor);
-                    Main.layoutManager.overviewGroup.add_child(this.actor);
-                    this._box.sync_hover();
+                    this.beforeOverviewShow = this._animStatus.showing() || this._animStatus.shown();
+                    this.beforeOverviewIgnore = this._animIgnore;
+                    this._animIgnore = true;
+                    if (!this.beforeOverviewShow) {
+                        this._animateIn(ANIMATION_TIME, 0);
+                    }
                 })
-            ],
-            [
-                Main.overview,
-                'hiding',
-                Lang.bind(this, this._setOpaque)
             ],
             [
                 Main.overview,
                 'hidden',
                 Lang.bind(this, function() {
-                    Main.layoutManager.overviewGroup.remove_child(this.actor);
-                    global.window_group.add_child(this.actor);
-                    this._box.sync_hover();
+                    this._animIgnore = this.beforeOverviewIgnore;
+                    if (!this.beforeOverviewShow) {
+                        this._animateOut(ANIMATION_TIME, 0);
+                    }
+                })
+            ],
+            [
+                Main.messageTray,
+                'showing',
+                Lang.bind(this, function () {
+                    this.beforeTrayShow = this._animStatus.showing() || this._animStatus.shown();
+                    this.beforeTrayIgnore = this._animIgnore;
+                    this._animIgnore = true;
+                    if (this.beforeTrayShow) {
+                        this._animateOut(ANIMATION_TIME, 0);
+                    }
                 })
             ],
             [
                 Main.messageTray,
                 'hiding',
                 Lang.bind(this, function () {
-                    Main.layoutManager.overviewGroup.remove_child(this.actor);
-                    global.window_group.add_child(this.actor);
-                    this._box.sync_hover();
+                    this._animIgnore = this.beforeTrayIgnore;
+                    if (this.beforeTrayShow) {
+                        this._animateIn(ANIMATION_TIME, 0);
+                    }
                 })
             ]
         );
@@ -164,7 +180,8 @@ const AtomDock = new Lang.Class({
          * The problem is, mesageTray will only pick up actors from
          * window.global_group or overlayGroup and the Dock is in neither of those.
          */
-        global.window_group.add_child(this.actor);
+
+        Main.uiGroup.add_child(this.actor);
 
         Main.layoutManager._trackActor(this._box, { trackFullscreen: true });
         /* Pretend this._box is isToplevel child so that fullscreen
@@ -184,8 +201,6 @@ const AtomDock = new Lang.Class({
         // Adjust dock theme to match global theme
         this._adjustTheme();
 
-        // Set the default dock style
-        this._setOpaque();
 
         // Set initial position
         this._resetPosition();
@@ -246,13 +261,18 @@ const AtomDock = new Lang.Class({
         let borderColor = themeNode.get_border_color(St.Side.BOTTOM);
         let borderWidth = themeNode.get_border_width(St.Side.BOTTOM);
         let borderRadius = themeNode.get_border_radius(St.Corner.TOPRIGHT);
+        let opacityType = 'glass'; // glass, default
 
         /* We're "swapping" bottom border and bottom-right corner styles to
          * left and top-left corner
          */
-        let newStyle = 'padding: 0 0 0 0; border-bottom: none;' +
+        let newStyle = 'padding: 0; border-bottom: none;' +
             'border-radius: ' + borderRadius + 'px ' + borderRadius + 'px 0 0;' +
             'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
+
+        if (this._backgroundOpacity !== -1) {
+            newStyle = 'background-color: rgba(0, 0, 0, ' + this._backgroundOpacity + '); ' + newStyle;
+        }
 
         this.dash._container.set_style(newStyle);
     },
@@ -280,17 +300,14 @@ const AtomDock = new Lang.Class({
         if (selector._showAppsButton.checked !== this.dash.showAppsButton.checked) {
 
             if (this.dash.showAppsButton.checked) {
-
+                selector._showAppsButton.checked = true;
                 if (!Main.overview._shown) {
                 
                     Main.overview.show();   
                 }
-                selector._showAppsButton.checked = true;
-            } else {
-            
+            } else {            
                 // force exiting overview if needed
                 Main.overview.hide();
-                selector._showAppsButton.checked = false;
             }
         }
     },
@@ -319,15 +336,6 @@ const AtomDock = new Lang.Class({
         this._restoreLegacyOverview();
     },
 
-    _setOpaque: function() {
-        this.dash._container.add_style_pseudo_class('desktop');
-    },
-
-    _setTransparent: function() {
-        this.dash._container.remove_style_pseudo_class('desktop');
-        this.disableAutoHide();
-    },
-
     _hoverChanged: function() {
         /* Skip if dock is not in autohide mode for instance because it is shown
          * by intellihide. Delay the hover changes check while switching
@@ -340,19 +348,21 @@ const AtomDock = new Lang.Class({
                 this._hoverChanged();
                 return false;
             }));
-        } else if (this._autohideStatus) {
+        } else if (this._autoIntelliStatus) {
             if (this._box.hover) {
-                this._show();
+                this._showHover();
             } else {
-                this._hide();
+                this._hideHover();
             }
         }
     },
 
-    _show: function() {
+    _showHover: function() {
         let anim = this._animStatus;
 
-        if (this._autohideStatus && (anim.hidden() || anim.hiding())) {
+        if (this._animIgnore) return;
+
+        if (anim.hidden() || anim.hiding()) {
             let delay;
             /* If the dock is hidden, wait this._settings.get_double('show-delay')
              * before showing it otherwise show it immediately.
@@ -372,11 +382,13 @@ const AtomDock = new Lang.Class({
         }
     },
 
-    _hide: function() {
+    _hideHover: function() {
         let anim = this._animStatus;
 
+        if (this._animIgnore) return;
+
         // If no hiding animation is running or queued
-        if (this._autohideStatus && (anim.showing() || anim.shown())) {
+        if (anim.showing() || anim.shown()) {
             let delay;
 
             /* If a show is queued but still not started (i.e the mouse was
@@ -413,7 +425,7 @@ const AtomDock = new Lang.Class({
    _animateIn: function(time, delay) {
         this._animStatus.queue(true);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - this._box.height,
+            y: this._monitor.y + this._monitor.height - this.trayHeight - this._box.height,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
@@ -435,7 +447,7 @@ const AtomDock = new Lang.Class({
     _animateOut: function(time, delay) {
         this._animStatus.queue(false);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - 1,
+            y: this._monitor.y + this._monitor.height - this.trayHeight - 1,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
@@ -469,24 +481,34 @@ const AtomDock = new Lang.Class({
         }
     },
 
-    // Disable autohide effect, thus show dash
-    disableAutoHide: function() {
+    // Changes the background opacity
+    setBackgroundOpacity: function(opacity) {
+        this._backgroundOpacity = opacity;
+        this._adjustTheme();
+    },
 
-        if (this._autohideStatus === true) {
-            this._autohideStatus = false;
+    // Disable autohide effect, thus show dash
+    intelliShow: function() {
+
+        if (this._animIgnore) return;
+
+        if (this._autoIntelliStatus === true) {
+            this._autoIntelliStatus = false;
             this._removeAnimations();
             this._animateIn(ANIMATION_TIME, 0);
         }
     },
 
     // Enable autohide effect, hide dash
-    enableAutoHide: function() {
+    intelliHide: function() {
 
-        if (this._autohideStatus === false) {
+        if (this._animIgnore) return;
+
+        if (this._autoIntelliStatus === false) {
             // immediately fadein background if hide is blocked by mouseover,
             let delay = 0;
             // oterwise start fadein when dock is already hidden.
-            this._autohideStatus = true;
+            this._autoIntelliStatus = true;
             this._removeAnimations();
 
             if (this._box.hover === true) {

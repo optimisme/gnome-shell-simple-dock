@@ -11,5 +11,10 @@
         <summary>Maximum icon size</summary>
         <description>Maximum icon size</description>
     </key>
+    <key type="d" name="background-opacity">
+      <default>0.4</default>
+      <summary>Background opacity</summary>
+      <description>Sets the background opacity.</description>
+    </key>
 </schema>
 </schemalist>

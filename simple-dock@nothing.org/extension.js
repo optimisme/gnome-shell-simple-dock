@@ -24,10 +24,12 @@ let modifiedMessageTray;
 let settings = null;
 let settingsTraySignal = null;
 let settingsIconSignal = null;
+let settingsBackgroundSignal = null;
 
 // Settings
 const SETTINGS_CHANGE_MESSAGE_TRAY = "change-message-tray";
 const SETTINGS_MAX_ICON_SIZE = "max-icon-size";
+const SETTINGS_BACKGROUND_OPACITY = "background-opacity";
 
 function setSettingsNotifications() {
     if (settings.get_boolean(SETTINGS_CHANGE_MESSAGE_TRAY)) {
@@ -39,6 +41,10 @@ function setSettingsNotifications() {
 
 function settingsIconChanged() {
     atomDock.setMaxIconSize(settings.get_int(SETTINGS_MAX_ICON_SIZE), true);
+}
+
+function settingsBackgroundChanged() {
+    atomDock.setBackgroundOpacity(settings.get_double(SETTINGS_BACKGROUND_OPACITY));
 }
 
 // Init settings
@@ -61,11 +67,11 @@ function init() {
 }
 
 function show() {
-    atomDock.disableAutoHide();
+    atomDock.intelliShow();
 }
 
 function hide() {
-    atomDock.enableAutoHide();
+    atomDock.intelliHide();
 }
 
 function retop() {
@@ -94,6 +100,9 @@ function enable() {
 
     settingsIconSignal = settings.connect("changed::" + SETTINGS_MAX_ICON_SIZE,
         function() { settingsIconChanged(); });
+
+    settingsBackgroundSignal = settings.connect("changed::" + SETTINGS_BACKGROUND_OPACITY,
+        function() { settingsBackgroundChanged(); });
 }
 
 function disable() {
@@ -111,5 +120,10 @@ function disable() {
     if(settingsIconSignal != null) {
         settings.disconnect(settingsIconSignal);
         settingsIconSignal = null;
+    }
+
+    if(settingsBackgroundSignal != null) {
+        settings.disconnect(settingsBackgroundSignal);
+        settingsBackgroundSignal = null;
     }
 }

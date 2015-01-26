@@ -7,6 +7,7 @@ const _ = imports.gettext.domain(Me.uuid).gettext;
 
 const SETTINGS_CHANGE_MESSAGE_TRAY = "change-message-tray";
 const SETTINGS_MAX_ICON_SIZE = "max-icon-size";
+const SETTINGS_BACKGROUND_OPACITY = "background-opacity";
 
 let settings;
 
@@ -93,6 +94,32 @@ function buildPrefsWidget() {
     hbox3.add(settingIconCombo);
 
     vbox.add(hbox3);
+
+    let hbox4 = new Gtk.Box({
+        orientation: Gtk.Orientation.HORIZONTAL,
+		margin_left:0, margin_top:10, margin_bottom:0, margin_right:0
+    });
+
+    let opacityLabel = new Gtk.Label({
+        label: _("Background opacity"),
+        xalign: 0
+    });
+
+    opacityLabel.set_tooltip_text(_("Sets background opacity"));
+    let opacitySlider =  new Gtk.Scale({orientation: Gtk.Orientation.HORIZONTAL, valuePos: Gtk.PositionType.RIGHT});
+        opacitySlider.set_range(0, 100);
+        opacitySlider.set_value(40);
+        opacitySlider.set_digits(0);
+        opacitySlider.set_increments(5,5);
+        opacitySlider.set_size_request(150, -1);
+        opacitySlider.connect("value-changed", function(widget) {
+            settings.set_double(SETTINGS_BACKGROUND_OPACITY, widget.get_value()/100);
+        });
+
+    hbox4.pack_start(opacityLabel, true, true, 0);
+    hbox4.add(opacitySlider);
+
+    vbox.add(hbox4);
 
     frame.add(vbox);
     frame.show_all();
