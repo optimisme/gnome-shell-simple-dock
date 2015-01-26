@@ -92,11 +92,7 @@ function enable() {
     }
 
 	let backOpacity = settings.get_double(SETTINGS_BACKGROUND_OPACITY);
-    if (typeof backOpacity !== 'undefined') {
-        atomDock.setBackgroundOpacity(backOpacity, false);
-    } else {
-        atomDock.setBackgroundOpacity(0, false);
-    }
+    atomDock.setBackgroundOpacity(backOpacity, true);
 
     intellihide = new Intellihide.Intellihide(show, hide, retop, atomDock);
 
