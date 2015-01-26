@@ -108,7 +108,7 @@ function buildPrefsWidget() {
     opacityLabel.set_tooltip_text(_("Sets background opacity"));
     let opacitySlider =  new Gtk.Scale({orientation: Gtk.Orientation.HORIZONTAL, valuePos: Gtk.PositionType.RIGHT});
         opacitySlider.set_range(0, 100);
-        opacitySlider.set_value(40);
+        opacitySlider.set_value(settings.get_double(SETTINGS_BACKGROUND_OPACITY) * 100);
         opacitySlider.set_digits(0);
         opacitySlider.set_increments(5,5);
         opacitySlider.set_size_request(150, -1);

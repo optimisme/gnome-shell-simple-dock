@@ -270,7 +270,9 @@ const AtomDock = new Lang.Class({
             'border-radius: ' + borderRadius + 'px ' + borderRadius + 'px 0 0;' +
             'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
 
-        if (this._backgroundOpacity !== -1) {
+        if (this._backgroundOpacity === 0) {
+            newStyle = 'background-color: rgba(200, 0, 0, 0); padding: 0; border: none;';
+        } else if (this._backgroundOpacity !== -1) {
             newStyle = 'background-color: rgba(0, 0, 0, ' + this._backgroundOpacity + '); ' + newStyle;
         }
 
@@ -482,9 +484,11 @@ const AtomDock = new Lang.Class({
     },
 
     // Changes the background opacity
-    setBackgroundOpacity: function(opacity) {
+    setBackgroundOpacity: function(opacity, update) {
         this._backgroundOpacity = opacity;
-        this._adjustTheme();
+        if (update) {
+            this._adjustTheme();
+        }
     },
 
     // Disable autohide effect, thus show dash

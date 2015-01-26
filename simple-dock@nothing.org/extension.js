@@ -44,7 +44,7 @@ function settingsIconChanged() {
 }
 
 function settingsBackgroundChanged() {
-    atomDock.setBackgroundOpacity(settings.get_double(SETTINGS_BACKGROUND_OPACITY));
+    atomDock.setBackgroundOpacity(settings.get_double(SETTINGS_BACKGROUND_OPACITY), true);
 }
 
 // Init settings
@@ -89,6 +89,13 @@ function enable() {
         atomDock.setMaxIconSize(iconSize, false);
     } else {
         atomDock.setMaxIconSize(48, false);
+    }
+
+	let backOpacity = settings.get_double(SETTINGS_BACKGROUND_OPACITY);
+    if (typeof backOpacity !== 'undefined') {
+        atomDock.setBackgroundOpacity(backOpacity, false);
+    } else {
+        atomDock.setBackgroundOpacity(0, false);
     }
 
     intellihide = new Intellihide.Intellihide(show, hide, retop, atomDock);
