@@ -194,7 +194,8 @@ const AtomDash = new Lang.Class({
         this._hookUpLabel(this._showAppsIcon);
 
         this.showAppsButton = this._showAppsIcon.toggleButton;
-        this.showAppsButton.set_style("padding-bottom: 0px; padding-top: 0px;");
+        this.showAppsButton.set_style("padding-right: 0px; padding-top: 0px; padding-bottom: 0px;");
+
         this._container.add_actor(this._showAppsIcon);
 
         this.actor = new St.Bin({ child: this._container });
@@ -491,6 +492,9 @@ const AtomDash = new Lang.Class({
         let firstIcon = firstButton._delegate.icon;
 
         let minWidth, natWidth;
+
+        // Remove unnecesary padding for first button
+        firstButton.set_style("padding-left: 0px; padding-top: 0px; padding-bottom: 0px;");
 
         // Enforce the current icon size during the size request
         let [currentWidth, currentHeight] = firstIcon.icon.get_size();
