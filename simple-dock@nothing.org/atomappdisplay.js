@@ -27,7 +27,7 @@ const AtomAppIcon = new Lang.Class({
         this.parent(app, iconParams, { setSizeManually: true, showLabel: false });
         this._windowsChangedId = this.app.connect('windows-changed', Lang.bind(this, this._onStateChanged));
 
-        this.actor.set_style("padding-bottom: 0px; padding-top: 0px;");
+        this.actor.set_style("padding: 0px;");
     },
 
     activate: function (button) {
