@@ -10,9 +10,7 @@ Featuring:
 - Intelligent auto hide.
 - Minimize focused application.
 - Drag and drop favorites.
-- Disable message tray (Optional).
-- Top bar message tray button (if disabled).
-- Move notifications to top (Optional).
+- Adapt notifications (Optional).
 - Adjust icon sizes (Optional)
 
 INSTALLATION
