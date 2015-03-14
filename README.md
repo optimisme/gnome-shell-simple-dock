@@ -1,7 +1,7 @@
 gnome-shell-simple-dock
 =======================
 
-![screenshot](https://raw.github.com/optimisme/gnome-shell-simple-dock/master/captures/screenshot.png)
+![screenshot](https://raw.github.com/optimisme/gnome-shell-simple-dock/master/screenshot.png)
 
 Bottom dock for gnome shell
 
