@@ -149,7 +149,6 @@ const AtomAppIconMenu = new Lang.Class({
         // We want to keep the item hovered while the menu is up
         this.blockSourceEvents = true;
         this._source = source;
-        this.connect('activate', Lang.bind(this, this._onActivate));
         this.actor.add_style_class_name('app-well-menu');
 
         // Chain our visibility and lifecycle to that of the source
@@ -169,44 +168,106 @@ const AtomAppIconMenu = new Lang.Class({
     _redisplay: function() {
         this.removeAll();
 
-        // Get interesting windows
-        let windows = this._source.app.get_windows().filter(function(w) {
-            if (MAJOR_VERSION === 3 && MINOR_VERSION <= 10) {
-                return Shell.WindowTracker.is_window_interesting(w);
-            } else {
-                return !w.skip_taskbar;
-            }
+        let app = this._source.app;
+        let appInfo = app.get_app_info();
+        let actions = appInfo.list_actions();
+        let windows = app.get_windows().filter(function(w) {
+            return !w.skip_taskbar;
         });
 
-        // Display the app windows menu items and the separator between windows
-        // of the current desktop and other windows.
-        let activeWorkspace = global.screen.get_active_workspace();
-        let separatorShown = windows.length > 0 &&
-            windows[0].get_workspace() !== activeWorkspace;
+        if (!app.is_window_backed()) {
 
-        for (let i = 0; i < windows.length; i++) {
-            if (!separatorShown &&
-                windows[i].get_workspace() !== activeWorkspace) {
-
-                this._appendSeparator();
-                separatorShown = true;
+            // Add 'open windows' buttons'
+            this._windowMenuItems = new Array(windows.length);
+            for (let i = 0; i < windows.length; i++) {
+                let name = windows[i].title;
+                let chars = 40;
+                if (name.length > chars) { name = name.substring(0, chars) + '...'; }
+                this._windowMenuItems[i] = this._appendMenuItem(name);
+                this._windowMenuItems[i]._refWindow = windows[i];
+                this._windowMenuItems[i].connect('activate', Lang.bind(this, function (actor, event) {
+                    this.emit('activate-window', actor._refWindow);
+                    this.close();
+                }));
             }
 
-            let item = this._appendMenuItem(windows[i].title);
-            item._window = windows[i];
-        }
-
-        if (!this._source.app.is_window_backed()) {
-        
             if (windows.length > 0) {
+
+                this._appendSeparator();
+
+                // Add 'action' buttons
+                this._actionMenuItems = new Array(actions.length);
+                for (i = 0; i < actions.length; i++) {
+                    this._actionMenuItems[i] = this._appendMenuItem(appInfo.get_action_name(actions[i]));
+                    this._actionMenuItems[i]._refAction = actions[i];
+                    this._actionMenuItems[i]._refWindow = windows[0];
+                    this._actionMenuItems[i].connect('activate', Lang.bind(this, function (actor, event) {
+                        let app = this._source.app;
+                        app.launch_action(actor._refAction, event.get_time(), -1);
+                        this.emit('activate-window', actor._refWindow);
+                        this.close();
+                    }));
+                }
+                if (actions.length > 0) {
+
+                    this._appendSeparator();
+
+                } else {
+
+                    // Add 'new window' button only if there are open windows and there is no 'action'
+                    this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
+                    this._newWindowMenuItem._refWindow = windows[0];
+                    this._newWindowMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+                        let app = this._source.app;
+                        app.open_new_window(-1);
+                        this.emit('activate-window', actor._refWindow);
+                        this.close();
+                    }));
+                    this._appendSeparator();
+                }
+
+                this._openWindowMenuItem = null;
+
+            } else {
+
+                // Add 'open' button (only if there are no open windows)
+                this._openWindowMenuItem = this._appendMenuItem(_("Open"));
+                this._openWindowMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+                    let app = this._source.app;
+                    app.open_new_window(-1);
+                    this.emit('activate-window', null);
+                    this.close();
+                }));
                 this._appendSeparator();
             }
 
-            let isFavorite = AppFavorites.getAppFavorites().isFavorite(this._source.app.get_id());
-            this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
-            this._appendSeparator();
-            this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites")
-                                                                : _("Add to Favorites"));
+            // Add 'add/remove favorites' button
+            let isFavorite = AppFavorites.getAppFavorites().isFavorite(app.get_id());
+            this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites") : _("Add to Favorites"));
+            this._toggleFavoriteMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+                let app = this._source.app;
+                let favs = AppFavorites.getAppFavorites();
+                let isFavorite = favs.isFavorite(app.get_id());
+                if (isFavorite) {
+                    favs.removeFavorite(app.get_id());
+                } else {
+                    favs.addFavorite(app.get_id());
+                }
+                this.close();
+            }));
+
+            // Add 'quit' button
+            if (windows.length > 0) {
+                this._quitMenuItem = this._appendMenuItem(_("Quit"))
+                this._quitMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+                    let app = this._source.app;
+                    let wins = app.get_windows();
+                    for (let i=0; i < wins.length; i++) {
+                        wins[i].delete(global.get_current_time());
+                    }
+                    this.close();
+                }));
+            }
         }
     },
 
@@ -225,28 +286,6 @@ const AtomAppIconMenu = new Lang.Class({
     popup: function(activatingButton) {
         this._redisplay();
         this.open();
-    },
-
-    _onActivate: function (actor, child) {
-        if (child._window) {
-            let metaWindow = child._window;
-            this.emit('activate-window', metaWindow);
-        } else if (child === this._newWindowMenuItem) {
-            this._source.app.open_new_window(-1);
-            this.emit('activate-window', null);
-        } else if (child === this._toggleFavoriteMenuItem) {
-            let favs = AppFavorites.getAppFavorites();
-            let isFavorite = favs.isFavorite(this._source.app.get_id());
-
-            if (isFavorite) {
-                favs.removeFavorite(this._source.app.get_id());
-            } else {
-                favs.addFavorite(this._source.app.get_id());
-            }
-
-        }
-
-        this.close();
     }
 });
 
