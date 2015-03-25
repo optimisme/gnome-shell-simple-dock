@@ -100,7 +100,7 @@ const AtomAppIcon = new Lang.Class({
         this.actor.fake_release();
         this._draggable.fakeRelease();
 
-        if (!this._menu) {
+        if (!this._menu && this.app.get_app_info() !== null) {
             this._menu = new AtomAppIconMenu(this);
 
             this._menu.connect('activate-window', Lang.bind(this, function (menu, window) {
