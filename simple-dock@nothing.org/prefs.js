@@ -5,7 +5,6 @@ const Me = imports.misc.extensionUtils.getCurrentExtension();
 
 const _ = imports.gettext.domain(Me.uuid).gettext;
 
-const SETTINGS_CHANGE_MESSAGE_TRAY = "change-message-tray";
 const SETTINGS_MAX_ICON_SIZE = "max-icon-size";
 const SETTINGS_BACKGROUND_OPACITY = "background-opacity";
 
@@ -38,30 +37,6 @@ function buildPrefsWidget() {
         margin: 20,
         margin_top: 10
     });
-
-    let hbox1 = new Gtk.Box({
-        orientation: Gtk.Orientation.HORIZONTAL
-    });
-
-    let settingLabel = new Gtk.Label({
-        label: _("Adapt message bar and notifications"),
-        xalign: 0
-    });
-
-    let settingSwitch = new Gtk.Switch({
-        active: settings.get_boolean(SETTINGS_CHANGE_MESSAGE_TRAY)
-    });
-    settingSwitch.connect("notify::active", function(button) {
-        settings.set_boolean(SETTINGS_CHANGE_MESSAGE_TRAY, button.active);
-    });
-
-    settingLabel.set_tooltip_text(_("Sets bottom message tray corners and moves notifications to the top bar"));
-    settingSwitch.set_tooltip_text(_("Sets bottom message tray corners and moves notifications to the top bar"));
-
-    hbox1.pack_start(settingLabel, true, true, 0);
-    hbox1.add(settingSwitch);
-
-    vbox.add(hbox1);
 
     let hbox3 = new Gtk.Box({
         orientation: Gtk.Orientation.HORIZONTAL,

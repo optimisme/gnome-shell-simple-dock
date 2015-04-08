@@ -46,9 +46,6 @@ const AtomDock = new Lang.Class({
         // Used to store dock position for intellihide checking
         this.staticBox = new Clutter.ActorBox();
 
-        // Draw animation height for message tray
-        this.trayHeight = 0;
-
         // Create dash
         this.dash = new AtomDash.AtomDash();
         this.dash.showAppsButton.connect('notify::checked',
@@ -108,28 +105,6 @@ const AtomDock = new Lang.Class({
                         this._animateOut(ANIMATION_TIME, 0);
                     }
                 })
-            ],
-            [
-                Main.messageTray,
-                'showing',
-                Lang.bind(this, function () {
-                    this.beforeTrayShow = this._animStatus.showing() || this._animStatus.shown();
-                    this.beforeTrayIgnore = this._animIgnore;
-                    this._animIgnore = true;
-                    if (this.beforeTrayShow) {
-                        this._animateOut(ANIMATION_TIME, 0);
-                    }
-                })
-            ],
-            [
-                Main.messageTray,
-                'hiding',
-                Lang.bind(this, function () {
-                    this._animIgnore = this.beforeTrayIgnore;
-                    if (this.beforeTrayShow) {
-                        this._animateIn(ANIMATION_TIME, 0);
-                    }
-                })
             ]
         );
 
@@ -174,12 +149,6 @@ const AtomDock = new Lang.Class({
         // Add dash container actor and the container to the Chrome
         this.actor.set_child(this._box);
         this._box.add_actor(this.dash.actor);
-        /* Put the Dock into global.window_group to have it being picked up by
-         * messageTray desktop clone not sure if this might cause problems but
-         * it seems to work afaict.
-         * The problem is, mesageTray will only pick up actors from
-         * window.global_group or overlayGroup and the Dock is in neither of those.
-         */
 
         Main.uiGroup.add_child(this.actor);
 
@@ -427,7 +396,7 @@ const AtomDock = new Lang.Class({
    _animateIn: function(time, delay) {
         this._animStatus.queue(true);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - this.trayHeight - this._box.height,
+            y: this._monitor.y + this._monitor.height - this._box.height,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
@@ -449,7 +418,7 @@ const AtomDock = new Lang.Class({
     _animateOut: function(time, delay) {
         this._animStatus.queue(false);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - this.trayHeight - 1,
+            y: this._monitor.y + this._monitor.height - 1,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
