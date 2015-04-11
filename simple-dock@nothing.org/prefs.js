@@ -5,6 +5,7 @@ const Me = imports.misc.extensionUtils.getCurrentExtension();
 
 const _ = imports.gettext.domain(Me.uuid).gettext;
 
+const SETTINGS_SHOW_METHOD = "show-method";
 const SETTINGS_MAX_ICON_SIZE = "max-icon-size";
 const SETTINGS_BACKGROUND_OPACITY = "background-opacity";
 
@@ -37,6 +38,32 @@ function buildPrefsWidget() {
         margin: 20,
         margin_top: 10
     });
+
+    let hbox2 = new Gtk.Box({
+        orientation: Gtk.Orientation.HORIZONTAL,
+		margin_left:0, margin_top:10, margin_bottom:0, margin_right:0
+    });
+
+    let showMethodLabel = new Gtk.Label({
+        label: _("Show method"),
+        xalign: 0
+    });
+
+    let showMethodCombo = new Gtk.ComboBoxText({halign:Gtk.Align.END});
+    showMethodCombo.append_text(_("Intellihide"));
+    showMethodCombo.append_text(_("Hidden"));
+    showMethodCombo.set_active(settings.get_int(SETTINGS_SHOW_METHOD));
+    showMethodCombo.connect("changed", function(widget) {
+        settings.set_int(SETTINGS_SHOW_METHOD, widget.get_active());
+    });
+
+    showMethodLabel.set_tooltip_text(_("Show method"));
+    showMethodCombo.set_tooltip_text(_("Shows or always hides dock"));
+
+    hbox2.pack_start(showMethodLabel, true, true, 0);
+    hbox2.add(showMethodCombo);
+
+    vbox.add(hbox2);
 
     let hbox3 = new Gtk.Box({
         orientation: Gtk.Orientation.HORIZONTAL,

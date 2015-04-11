@@ -42,11 +42,12 @@ const Intellihide = new Lang.Class({
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._tracker = Shell.WindowTracker.get_default();
         this._focusApp = null;
+        this.showMethod = 0;
+        this.overviewShowing = false;
 
         // current intellihide status
         this.status = undefined;
-        // manually temporary disable intellihide update
-        this._disableIntellihide = false;
+
         // Set base functions
         this.showFunction = show;
         this.hideFunction = hide;
@@ -107,22 +108,23 @@ const Intellihide = new Lang.Class({
             [
                 global.screen,
                 'restacked',
-                Lang.bind(this, this._windowRestacked)
+                Lang.bind(this, this._updateDockVisibility)
             ],
-            // Set visibility in overview mode
+            [
+                global.screen,
+                'monitors-changed',
+                Lang.bind(this, this._updateDockVisibility)
+            ],
             [
                 Main.overview,
                 'showing',
-                Lang.bind(this, this._overviewEnter)
+                Lang.bind(this, this._overviewOn)
             ],
             [
                 Main.overview,
-                'hiding',
-                Lang.bind(this, this._overviewExit)
+                'hidden',
+                Lang.bind(this, this._overviewOff)
             ],
-            /* update when monitor changes, for instance in multimonitor
-             * when monitor are attached
-             */
             [
                 global.screen,
                 'monitors-changed',
@@ -170,17 +172,6 @@ const Intellihide = new Lang.Class({
         this.retopFunction();
     },
 
-    _overviewExit: function() {
-        // Inside the overview the dash could have been hidden
-        this.status = undefined;
-        this._disableIntellihide = false;
-        this._updateDockVisibility();
-    },
-
-    _overviewEnter: function() {
-        this._disableIntellihide = true;
-    },
-
     _grabOpBegin: function() {
         // A good compromise between reactivity and efficiency; to be tuned.
         let INTERVAL = 100;
@@ -212,18 +203,13 @@ const Intellihide = new Lang.Class({
         this._updateDockVisibility();
     },
 
-    _windowRestacked: function() {
-        /* Skip update dock on workspace switch, because we need that
-         * to be handled by _switchWorkspace.
-         */
-        if (Main.wm._workspaceSwitcherPopup === null) {
-            this._updateDockVisibility();
-        }
-    },
-
     _updateDockVisibility: function() {
 
-        if (!this._disableIntellihide) {
+        if (this.overviewShowing) {
+            this._show();
+        } else if (this.showMethod !== 0) {
+            this._hide();
+        } else {
         
             let overlaps = false;
             let windows = global.get_window_actors();
@@ -262,7 +248,6 @@ const Intellihide = new Lang.Class({
                 this._show();
             }
         }
-
         this._retop();
     },
 
@@ -301,18 +286,16 @@ const Intellihide = new Lang.Class({
              */
             if (this._focusApp !== currentApp &&
                     !(meta_win.maximized_vertically &&
-                        !meta_win.maximized_horizontally)) {
+                        !meta_win.maximized_horizontally) && !meta_win.is_above()) {
                 return false;
             }
         }
 
-        if (wksp_index === currentWorkspace &&
-                meta_win.showing_on_its_workspace()) {
+        if (wksp_index === currentWorkspace && meta_win.showing_on_its_workspace()) {
             return true;
         } else {
             return false;
         }
-
     },
 
     /* Filter windows by type
@@ -343,5 +326,20 @@ const Intellihide = new Lang.Class({
         }
 
         return false;
-    }
+    },
+
+    _overviewOn: function() {
+        this.overviewShowing = true;
+        this._updateDockVisibility();
+    },
+
+    _overviewOff: function() {
+        this.overviewShowing = false;
+        this._updateDockVisibility();
+    },
+
+    setShowMethod: function(method) {
+        this.showMethod = method;
+        this._updateDockVisibility();
+    } 
 });

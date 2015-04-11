@@ -13,12 +13,18 @@ let oldDash;
 let atomDock;
 let intellihide;
 let settings = null;
+let settingsShowMethodSignal = null;
 let settingsIconSignal = null;
 let settingsBackgroundSignal = null;
 
 // Settings
+const SETTINGS_SHOW_METHOD = "show-method";
 const SETTINGS_MAX_ICON_SIZE = "max-icon-size";
 const SETTINGS_BACKGROUND_OPACITY = "background-opacity";
+
+function settingsShowMethodChanged() {
+    intellihide.setShowMethod(settings.get_int(SETTINGS_SHOW_METHOD));
+}
 
 function settingsIconChanged() {
     atomDock.setMaxIconSize(settings.get_int(SETTINGS_MAX_ICON_SIZE), true);
@@ -76,6 +82,15 @@ function enable() {
     atomDock.setBackgroundOpacity(backOpacity, true);
 
     intellihide = new Intellihide.Intellihide(show, hide, retop, atomDock);
+    let showMethod = settings.get_int(SETTINGS_SHOW_METHOD);
+    if (showMethod) {
+        intellihide.setShowMethod(showMethod);
+    } else {
+        intellihide.setShowMethod(0);
+    }
+
+    settingsShowMethodSignal = settings.connect("changed::" + SETTINGS_SHOW_METHOD,
+        function() { settingsShowMethodChanged(); });
 
     settingsIconSignal = settings.connect("changed::" + SETTINGS_MAX_ICON_SIZE,
         function() { settingsIconChanged(); });
@@ -89,6 +104,11 @@ function disable() {
     intellihide.destroy();
     atomDock.destroy();
     oldDash.showDash();
+
+    if(settingsShowMethodSignal != null) {
+        settings.disconnect(settingsShowMethodSignal);
+        settingsShowMethodSignal = null;
+    }
 
     if(settingsIconSignal != null) {
         settings.disconnect(settingsIconSignal);

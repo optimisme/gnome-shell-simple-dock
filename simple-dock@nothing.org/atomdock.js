@@ -83,28 +83,6 @@ const AtomDock = new Lang.Class({
                 Main.overview.viewSelector._showAppsButton,
                 'notify::checked',
                 Lang.bind(this, this._syncShowAppsButtonToggled)
-            ],
-            [
-                Main.overview,
-                'showing',
-                Lang.bind(this, function() {
-                    this.beforeOverviewShow = this._animStatus.showing() || this._animStatus.shown();
-                    this.beforeOverviewIgnore = this._animIgnore;
-                    this._animIgnore = true;
-                    if (!this.beforeOverviewShow) {
-                        this._animateIn(ANIMATION_TIME, 0);
-                    }
-                })
-            ],
-            [
-                Main.overview,
-                'hidden',
-                Lang.bind(this, function() {
-                    this._animIgnore = this.beforeOverviewIgnore;
-                    if (!this.beforeOverviewShow) {
-                        this._animateOut(ANIMATION_TIME, 0);
-                    }
-                })
             ]
         );
 
@@ -258,7 +236,7 @@ const AtomDock = new Lang.Class({
             + 'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
 
         if (backA === 0) {
-            newStyle = newStyle + 'padding: 0; border: none;';
+            newStyle = newStyle + 'border: none;';
         }
 
         this.dash._container.set_style(newStyle);
