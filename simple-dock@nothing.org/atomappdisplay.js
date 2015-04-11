@@ -4,6 +4,7 @@
 const Lang = imports.lang;
 const Signals = imports.signals;
 const Clutter = imports.gi.Clutter;
+const Meta = imports.gi.Meta;
 const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 
@@ -60,9 +61,15 @@ const AtomAppIcon = new Lang.Class({
 
     minimizeWindow: function (windows){
         let current_workspace = global.screen.get_active_workspace();
+        let rect = new Meta.Rectangle();
+
+        [rect.x, rect.y] = this.actor.get_transformed_position();
+        [rect.width, rect.height] = this.actor.get_transformed_size();
+
         for (let i = 0; i < windows.length; i++) {
             let w = windows[i];
             if (w.get_workspace() == current_workspace && w.showing_on_its_workspace()){
+                w.set_icon_geometry(rect);
                 w.minimize();
             }
         }

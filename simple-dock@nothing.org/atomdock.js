@@ -227,10 +227,26 @@ const AtomDock = new Lang.Class({
         this.dash._container.set_style(null);
 
         let themeNode = this.dash._container.get_theme_node();
+        let backOriginal = themeNode.get_background_color();
+        let backR = 0;
+        let backG = 0;
+        let backB = 0;
+        let backA = this._backgroundOpacity;
         let borderColor = themeNode.get_border_color(St.Side.BOTTOM);
         let borderWidth = themeNode.get_border_width(St.Side.BOTTOM);
         let borderRadius = themeNode.get_border_radius(St.Corner.TOPRIGHT);
-        let opacityType = 'glass'; // glass, default
+
+        if (typeof backOriginal === 'object') {
+            if (typeof backOriginal.red !== 'undefined') {
+                backR = backOriginal.red;
+            }
+            if (typeof backOriginal.green !== 'undefined') {
+                backG = backOriginal.green;
+            }
+            if (typeof backOriginal.blue !== 'undefined') {
+                backB = backOriginal.blue;
+            }
+        }
 
         /* We're "swapping" bottom border and bottom-right corner styles to
          * left and top-left corner
@@ -239,11 +255,8 @@ const AtomDock = new Lang.Class({
             'border-radius: ' + borderRadius + 'px ' + borderRadius + 'px 0 0;' +
             'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
 
-        if (this._backgroundOpacity === 0) {
-            newStyle = 'background-color: rgba(200, 0, 0, 0); padding: 0; border: none;';
-        } else if (this._backgroundOpacity !== -1) {
-            newStyle = 'background-color: rgba(0, 0, 0, ' + this._backgroundOpacity + '); ' + newStyle;
-        }
+        newStyle = 'background-color: rgba('
+            + backR + ', ' + backG + ', ' + backB + ', ' + backA + '); ' + newStyle;
 
         this.dash._container.set_style(newStyle);
     },
