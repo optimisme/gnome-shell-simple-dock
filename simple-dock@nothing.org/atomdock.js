@@ -237,13 +237,13 @@ const AtomDock = new Lang.Class({
         let borderRadius = themeNode.get_border_radius(St.Corner.TOPRIGHT);
 
         if (typeof backOriginal === 'object') {
-            if (typeof backOriginal.red !== 'undefined') {
+            if (typeof backOriginal.red === 'number') {
                 backR = backOriginal.red;
             }
-            if (typeof backOriginal.green !== 'undefined') {
+            if (typeof backOriginal.green === 'number') {
                 backG = backOriginal.green;
             }
-            if (typeof backOriginal.blue !== 'undefined') {
+            if (typeof backOriginal.blue === 'number') {
                 backB = backOriginal.blue;
             }
         }
@@ -251,12 +251,15 @@ const AtomDock = new Lang.Class({
         /* We're "swapping" bottom border and bottom-right corner styles to
          * left and top-left corner
          */
-        let newStyle = 'padding: 0; border-bottom: none;' +
-            'border-radius: ' + borderRadius + 'px ' + borderRadius + 'px 0 0;' +
-            'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
+        let newStyle = 'background-color: rgba('
+            + backR + ', ' + backG + ', ' + backB + ', ' + backA + '); '
+            + 'padding: 0; border-bottom: none;'
+            + 'border-radius: ' + borderRadius + 'px ' + borderRadius + 'px 0 0;'
+            + 'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
 
-        newStyle = 'background-color: rgba('
-            + backR + ', ' + backG + ', ' + backB + ', ' + backA + '); ' + newStyle;
+        if (backA === 0) {
+            newStyle = newStyle + 'padding: 0; border: none;';
+        }
 
         this.dash._container.set_style(newStyle);
     },
