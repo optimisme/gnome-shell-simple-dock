@@ -189,7 +189,7 @@ const AtomAppIconMenu = new Lang.Class({
             for (let i = 0; i < windows.length; i++) {
                 let name = windows[i].title;
                 let chars = 30;
-                if (name.length > chars) { name = name.substring(0, 5) + '...' + name.substring(name.length - (chars - 5)); }
+                if (name.length > chars) { name = name.substring(0, 15) + '...' + name.substring(name.length - (chars - 15)); }
                 this._windowMenuItems[i] = this._appendMenuItem(name);
                 this._windowMenuItems[i]._refWindow = windows[i];
                 this._windowMenuItems[i].connect('activate', Lang.bind(this, function (actor, event) {

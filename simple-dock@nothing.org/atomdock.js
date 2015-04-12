@@ -48,8 +48,6 @@ const AtomDock = new Lang.Class({
 
         // Create dash
         this.dash = new AtomDash.AtomDash();
-        this.dash.showAppsButton.connect('notify::checked',
-                Lang.bind(this, this._onShowAppsButtonToggled));
 
         this.actor = new St.Bin({
             name: 'atomDockContainer',
@@ -83,11 +81,6 @@ const AtomDock = new Lang.Class({
                 St.ThemeContext.get_for_stage(global.stage),
                 'changed',
                 Lang.bind(this, this._onThemeChanged)
-            ],
-            [
-                Main.overview.viewSelector._showAppsButton,
-                'notify::checked',
-                Lang.bind(this, this._syncShowAppsButtonToggled)
             ]
         );
 
@@ -256,36 +249,6 @@ const AtomDock = new Lang.Class({
     _restoreLegacyOverview: function() {
         // Remove legacy overview bottom padding
         Main.overview.viewSelector.actor.set_style(null);
-    },
-
-    _onShowAppsButtonToggled: function() {
-        /* Sync the status of the default appButtons. Only if the two statuses
-         * are different, that means the user interacted with the extension
-         * provided application button, cutomize the behaviour. Otherwise the
-         * shell has changed the status (due to the _syncShowAppsButtonToggled
-         * function below) and it has already performed the desired action.
-         */
-
-        let selector = Main.overview.viewSelector;
-        if (selector._showAppsButton.checked !== this.dash.showAppsButton.checked) {
-
-            if (this.dash.showAppsButton.checked) {
-                selector._showAppsButton.checked = true;
-                if (!Main.overview._shown) {
-                
-                    Main.overview.show();   
-                }
-            } else {            
-                // force exiting overview if needed
-                Main.overview.hide();
-            }
-        }
-    },
-
-    // Keep ShowAppsButton status in sync with the overview status
-    _syncShowAppsButtonToggled: function() {
-        let status = Main.overview.viewSelector._showAppsButton.checked;
-        this.dash.showAppsButton.checked = status;
     },
 
     // Show the dock and give focus to it

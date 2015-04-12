@@ -9,11 +9,14 @@ const Meta = imports.gi.Meta;
 const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 
+const AppDisplay = imports.ui.appDisplay;
 const AppFavorites = imports.ui.appFavorites;
 const Dash = imports.ui.dash;
 const DND = imports.ui.dnd;
 const Main = imports.ui.main;
+const PopupMenu = imports.ui.popupMenu;
 const Tweener = imports.ui.tweener;
+const Util = imports.misc.util;
 
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const Convenience = Me.imports.convenience;
@@ -60,6 +63,118 @@ var showLabelFunction = function() {
         transition: 'easeOutQuad',
     });
 };
+
+const AppsIconMenu = new Lang.Class({
+    Name: 'AppsIconMenu',
+    Extends: PopupMenu.PopupMenu,
+
+    _init: function(source) {
+        this.parent(source.actor, 0.5, St.Side.TOP);
+
+        // We want to keep the item hovered while the menu is up
+        this.blockSourceEvents = true;
+        this._source = source;
+        this.actor.add_style_class_name('app-well-menu');
+
+        // Chain our visibility and lifecycle to that of the source
+        source.actor.connect('notify::mapped',
+            Lang.bind(this, function() {
+                if (!source.actor.mapped) {
+                    this.close();
+                }
+            })
+        );
+
+        source.actor.connect('destroy', Lang.bind(this, this.actor.destroy));
+
+        Main.uiGroup.add_actor(this.actor);
+    },
+
+    _redisplay: function() {
+        this.removeAll();
+        this._settingsMenuItem = this._appendMenuItem(_("Simple Dock Settings"));
+        this._settingsMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+            Util.spawn(["gnome-shell-extension-prefs", Me.metadata.uuid]);
+            this.close();
+        }));
+    },
+
+    _appendSeparator: function () {
+        let separator = new PopupMenu.PopupSeparatorMenuItem();
+        this.addMenuItem(separator);
+    },
+
+    _appendMenuItem: function(labelText) {
+        let item = new PopupMenu.PopupMenuItem(labelText);
+        this.addMenuItem(item);
+
+        return item;
+    },
+
+    popup: function(activatingButton) {
+        this._redisplay();
+        this.open();
+    }
+});
+Signals.addSignalMethods(AppsIconMenu.prototype);
+
+function extendShowAppsIcon(showAppsIcon){
+
+    showAppsIcon.actor =  showAppsIcon.toggleButton;
+
+    // Re-use appIcon methods
+    showAppsIcon._removeMenuTimeout = AppDisplay.AppIcon.prototype._removeMenuTimeout;
+    showAppsIcon._setPopupTimeout = AppDisplay.AppIcon.prototype._setPopupTimeout;
+    showAppsIcon._onButtonPress = AppDisplay.AppIcon.prototype._onButtonPress;
+    showAppsIcon._onKeyboardPopupMenu = AppDisplay.AppIcon.prototype._onKeyboardPopupMenu;
+    showAppsIcon._onLeaveEvent = AppDisplay.AppIcon.prototype._onLeaveEvent;
+    showAppsIcon._onTouchEvent = AppDisplay.AppIcon.prototype._onTouchEvent;
+    showAppsIcon._onMenuPoppedDown = AppDisplay.AppIcon.prototype._onMenuPoppedDown;
+
+    // No action on clicked (showing of the appsview is controlled elsewhere)
+    showAppsIcon._onClicked = function(actor, button) {
+        showAppsIcon._removeMenuTimeout();
+    };
+
+    showAppsIcon.actor.connect('leave-event', Lang.bind( showAppsIcon, showAppsIcon._onLeaveEvent));
+    showAppsIcon.actor.connect('button-press-event', Lang.bind( showAppsIcon, showAppsIcon._onButtonPress));
+    showAppsIcon.actor.connect('touch-event', Lang.bind( showAppsIcon,  showAppsIcon._onTouchEvent));
+    showAppsIcon.actor.connect('clicked', Lang.bind( showAppsIcon, showAppsIcon._onClicked));
+    showAppsIcon.actor.connect('popup-menu', Lang.bind( showAppsIcon, showAppsIcon._onKeyboardPopupMenu));
+
+    showAppsIcon._menu = null;
+    showAppsIcon._menuManager = new PopupMenu.PopupMenuManager(showAppsIcon);
+    showAppsIcon._menuTimeoutId = 0;
+
+    showAppsIcon.showLabel = showLabelFunction;
+
+    showAppsIcon.popupMenu =  function() {
+
+        showAppsIcon._removeMenuTimeout();
+        showAppsIcon.actor.fake_release();
+
+        if (!showAppsIcon._menu) {
+            showAppsIcon._menu = new AppsIconMenu(showAppsIcon);
+            showAppsIcon._menu.connect('open-state-changed', Lang.bind(showAppsIcon, function (menu, isPoppedUp) {
+            if (!isPoppedUp)
+                showAppsIcon._onMenuPoppedDown();
+            }));
+            let id = Main.overview.connect('hiding', Lang.bind(showAppsIcon, function () { showAppsIcon._menu.close(); }));
+            showAppsIcon.actor.connect('destroy', function() {
+                    Main.overview.disconnect(id);
+                });
+            showAppsIcon._menuManager.addMenu(showAppsIcon._menu);
+        }
+        showAppsIcon.emit('menu-state-changed', true);
+        showAppsIcon.actor.set_hover(true);
+        showAppsIcon._menu.popup();
+        showAppsIcon._menuManager.ignoreRelease();
+        showAppsIcon.emit('sync-tooltip');
+        return false;
+    };
+
+    Signals.addSignalMethods(showAppsIcon);
+}
 
 const AtomDashItemContainer = new Lang.Class({
     Name: 'AtomDashItemContainer',
@@ -187,14 +302,21 @@ const AtomDash = new Lang.Class({
         this._container.add_actor(this._box);
 
         this._showAppsIcon = new AtomShowAppsIcon();
+        extendShowAppsIcon(this._showAppsIcon);
         this._showAppsIcon.childScale = 1;
         this._showAppsIcon.childOpacity = 255;
         this._showAppsIcon.icon.setIconSize(this.iconSize);
+        this._showAppsIcon.connect('menu-state-changed',
+            Lang.bind(this, function(appIcon, opened) {
+                this._itemMenuStateChanged(appIcon, opened);
+            })
+        );
 
         this._hookUpLabel(this._showAppsIcon);
 
         this.showAppsButton = this._showAppsIcon.toggleButton;
         this.showAppsButton.set_style("padding: 0px;");
+        this.showAppsButton.connect('notify::checked', Lang.bind(this, this._onShowAppsButtonToggled));
 
         this._container.add_actor(this._showAppsIcon);
 
@@ -265,6 +387,11 @@ const AtomDash = new Lang.Class({
                 Main.overview,
                 'item-drag-cancelled',
                 Lang.bind(this, this._onDragCancelled)
+            ],
+            [
+                Main.overview.viewSelector._showAppsButton,
+                'notify::checked',
+                Lang.bind(this, this._syncShowAppsButtonToggled)
             ]
         );
     },
@@ -385,14 +512,13 @@ const AtomDash = new Lang.Class({
            })
         );
 
-        appIcon.connect('menu-state-changed',
-            Lang.bind(this, function(appIcon, opened) {
-                this._itemMenuStateChanged(item, opened);
-            })
-        );
-
         let item = new AtomDashItemContainer();
         item.setChild(appIcon.actor);
+        appIcon.connect('menu-state-changed',
+            Lang.bind(this, function(appIcon, opened) {
+                this._itemMenuStateChanged(appIcon, opened);
+            })
+        );
 
         // Override default AppIcon label_actor, now the
         // accessible_name is set at DashItemContainer.setLabelText
@@ -413,7 +539,6 @@ const AtomDash = new Lang.Class({
                 Mainloop.source_remove(this._showLabelTimeoutId);
                 this._showLabelTimeoutId = 0;
             }
-
             item.hideLabel();
         } else {
             this.emit('menu-closed');
@@ -896,8 +1021,38 @@ const AtomDash = new Lang.Class({
         }));
 
         return true;
-    }
+    },
 
+
+    _onShowAppsButtonToggled: function() {
+        /* Sync the status of the default appButtons. Only if the two statuses
+         * are different, that means the user interacted with the extension
+         * provided application button, cutomize the behaviour. Otherwise the
+         * shell has changed the status (due to the _syncShowAppsButtonToggled
+         * function below) and it has already performed the desired action.
+         */
+
+        let selector = Main.overview.viewSelector;
+        if (selector._showAppsButton.checked !== this.showAppsButton.checked) {
+
+            if (this.showAppsButton.checked) {
+                selector._showAppsButton.checked = true;
+                if (!Main.overview._shown) {
+                
+                    Main.overview.show();   
+                }
+            } else {            
+                // force exiting overview if needed
+                Main.overview.hide();
+            }
+        }
+    },
+
+    // Keep ShowAppsButton status in sync with the overview status
+    _syncShowAppsButtonToggled: function() {
+        let status = Main.overview.viewSelector._showAppsButton.checked;
+        this.showAppsButton.checked = status;
+    }
 });
 
 Signals.addSignalMethods(AtomDash.prototype);
