@@ -70,6 +70,11 @@ const AtomDock = new Lang.Class({
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._signalHandler.push(
             [
+                this.dash,
+                'menu-closed',
+                Lang.bind(this, function () { this._box.sync_hover(); })
+            ],
+            [
                 global.screen,
                 'monitors-changed',
                 Lang.bind(this, this._resetPosition)

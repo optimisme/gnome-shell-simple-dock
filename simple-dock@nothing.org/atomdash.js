@@ -415,6 +415,8 @@ const AtomDash = new Lang.Class({
             }
 
             item.hideLabel();
+        } else {
+            this.emit('menu-closed');
         }
     },
 
