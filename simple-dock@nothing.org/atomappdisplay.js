@@ -195,7 +195,7 @@ const AtomAppIconMenu = new Lang.Class({
 
                 // Add 'action' buttons
                 actions = appInfo.list_actions();
-                this._appendActions(actions);
+                this._appendActions(appInfo, actions, windows);
 
                 if (actions.length > 0) {
 
@@ -216,7 +216,6 @@ const AtomAppIconMenu = new Lang.Class({
             }
 
             this._appendFavorites(app);
-            
             this._appendQuit();
         }
     },
@@ -238,7 +237,7 @@ const AtomAppIconMenu = new Lang.Class({
         }
     },
 
-    _appendActions: function (actions) {
+    _appendActions: function (appInfo, actions, windows) {
 
         // Add custom application 'actions'
         this._actionMenuItems = new Array(actions.length);
