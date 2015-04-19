@@ -308,7 +308,7 @@ const AtomDash = new Lang.Class({
         this._showAppsIcon.icon.setIconSize(this.iconSize);
         this._showAppsIcon.connect('menu-state-changed',
             Lang.bind(this, function(appIcon, opened) {
-                this._itemMenuStateChanged(appIcon, opened);
+                this._itemMenuStateChanged(this._showAppsIcon, opened);
             })
         );
 
@@ -516,7 +516,7 @@ const AtomDash = new Lang.Class({
         item.setChild(appIcon.actor);
         appIcon.connect('menu-state-changed',
             Lang.bind(this, function(appIcon, opened) {
-                this._itemMenuStateChanged(appIcon, opened);
+                this._itemMenuStateChanged(item, opened);
             })
         );
 
@@ -1023,7 +1023,6 @@ const AtomDash = new Lang.Class({
         return true;
     },
 
-
     _onShowAppsButtonToggled: function() {
         /* Sync the status of the default appButtons. Only if the two statuses
          * are different, that means the user interacted with the extension
@@ -1052,6 +1051,16 @@ const AtomDash = new Lang.Class({
     _syncShowAppsButtonToggled: function() {
         let status = Main.overview.viewSelector._showAppsButton.checked;
         this.showAppsButton.checked = status;
+    },
+
+    setShowAppsButton: function(show) {
+        if (show) {
+            this.showAppsButton.set_width(-1);
+            this.showAppsButton.show();
+        } else {
+            this.showAppsButton.set_width(0);
+            this.showAppsButton.hide();
+        }
     }
 });
 

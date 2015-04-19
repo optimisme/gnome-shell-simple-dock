@@ -6,6 +6,11 @@
         <summary>Adapt message bar and notifications</summary>
         <description>Adds a message bar button and moves notifications to the top bar</description>
     </key>
+    <key type="b" name="show-apps-button">
+        <default>true</default>
+        <summary>Show applications button</summary>
+        <description>Show applications button</description>
+    </key>
     <key type="i" name="show-method">
         <default>0</default>
         <summary>Show method</summary>

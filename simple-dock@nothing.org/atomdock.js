@@ -46,8 +46,14 @@ const AtomDock = new Lang.Class({
         // Used to store dock position for intellihide checking
         this.staticBox = new Clutter.ActorBox();
 
+        // 3.14 Remove until '<' when losing compatibility
+        // Draw animation height for message tray
+        this.trayHeight = 0;
+        // <
+
         // Create dash
         this.dash = new AtomDash.AtomDash();
+
 
         this.actor = new St.Bin({
             name: 'atomDockContainer',
@@ -234,7 +240,7 @@ const AtomDock = new Lang.Class({
             + 'border-left: ' + borderWidth + 'px solid ' + borderColor.to_string() + ';';
 
         if (backA === 0) {
-            newStyle = newStyle + 'border: none;';
+            newStyle = newStyle + 'padding: 0; border: none;';
         }
 
         this.dash._container.set_style(newStyle);
@@ -358,7 +364,8 @@ const AtomDock = new Lang.Class({
    _animateIn: function(time, delay) {
         this._animStatus.queue(true);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - this._box.height,
+            y: this._monitor.y + this._monitor.height - this._box.height
+                /* 3.14 Remove until '<' when losing compatibility */ - this.trayHeight /* < */,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
@@ -380,7 +387,8 @@ const AtomDock = new Lang.Class({
     _animateOut: function(time, delay) {
         this._animStatus.queue(false);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - 1,
+            y: this._monitor.y + this._monitor.height - 1
+                /* 3.14 Remove until '<' when losing compatibility */ - this.trayHeight /* < */,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
@@ -402,6 +410,11 @@ const AtomDock = new Lang.Class({
     // Put on top again
     retop: function() {
         global.window_group.set_child_above_sibling(this.actor, null);
+    },
+
+    // Show or hide applications button
+    setShowAppsButton: function(show) {
+        this.dash.setShowAppsButton(show);
     },
 
     // Changes the allowed maximum icon size

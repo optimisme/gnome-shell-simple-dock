@@ -2,6 +2,7 @@
 /*jshint esnext: true */
 /*jshint indent: 4 */
 
+const Config = imports.misc.config;
 const Lang = imports.lang;
 const Mainloop = imports.mainloop;
 const Meta = imports.gi.Meta;
@@ -38,16 +39,16 @@ const Intellihide = new Lang.Class({
     Name: 'Intellihide',
 
     _init: function(show, hide, retop, target) {
-
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._tracker = Shell.WindowTracker.get_default();
         this._focusApp = null;
         this.showMethod = 0;
         this.overviewShowing = false;
-
+        // 3.14 Remove until '<' when losing compatibility
+        this.trayShowing = false;
+        // <
         // current intellihide status
         this.status = undefined;
-
         // Set base functions
         this.showFunction = show;
         this.hideFunction = hide;
@@ -61,76 +62,124 @@ const Intellihide = new Lang.Class({
         this._windowChangedTimeout = 0;
 
         // Connect global signals
-        this._signalHandler.push(
-            // call updateVisibility when target actor changes
-            [
-                this._target,
-                'box-changed',
-                Lang.bind(this, this._updateDockVisibility)
-            ],
-            /* Subscribe to dash redisplay-workspace-switched event which
-             * emitted after dash finish redisplay specifically on
-             * workspace-switched event.
-             */
-            [
-                this._target.dash,
-                'redisplay-workspace-switched',
-                Lang.bind(this, this._switchWorkspace)
-            ],
-            /* Add timeout when window grab-operation begins and
-             * remove it when it ends. These signals only exist starting from
-             * Gnome-Shell 3.4
-             */
-            [
-                global.display,
-                'grab-op-begin',
-                Lang.bind(this, this._grabOpBegin)
-            ],
-            [
-                global.display,
-                'grab-op-end',
-                Lang.bind(this, this._grabOpEnd)
-            ],
-            // Direct maximize/unmazimize are not included in grab-operations
-            [
-                global.window_manager,
-                'maximize',
-                Lang.bind(this, this._updateDockVisibility)
-            ],
-            [
-                global.window_manager,
-                'unmaximize',
-                Lang.bind(this, this._updateDockVisibility)
-            ],
-            /* Trigggered for instance when a window is changed
-             * (also during switch-workspace).
-             */
-            [
-                global.screen,
-                'restacked',
-                Lang.bind(this, this._updateDockVisibility)
-            ],
-            [
-                global.screen,
-                'monitors-changed',
-                Lang.bind(this, this._updateDockVisibility)
-            ],
-            [
-                Main.overview,
-                'showing',
-                Lang.bind(this, this._overviewOn)
-            ],
-            [
-                Main.overview,
-                'hidden',
-                Lang.bind(this, this._overviewOff)
-            ],
-            [
-                global.screen,
-                'monitors-changed',
-                Lang.bind(this, this._updateDockVisibility)
-            ]
-        );
+        // 3.14 Remove next if "3.14" ... when losing compatibility
+        if (Config.PACKAGE_VERSION.indexOf("3.14.") !== -1) {
+            this._signalHandler.push(
+                [
+                    this._target,
+                    'box-changed',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    this._target.dash,
+                    'redisplay-workspace-switched',
+                    Lang.bind(this, this._switchWorkspace)
+                ],
+                [
+                    global.display,
+                    'grab-op-begin',
+                    Lang.bind(this, this._grabOpBegin)
+                ],
+                [
+                    global.display,
+                    'grab-op-end',
+                    Lang.bind(this, this._grabOpEnd)
+                ],
+                [
+                    global.window_manager,
+                    'maximize',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    global.window_manager,
+                    'unmaximize',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    global.screen,
+                    'restacked',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    global.screen,
+                    'monitors-changed',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    Main.overview,
+                    'showing',
+                    Lang.bind(this, this._overviewOn)
+                ],
+                [
+                    Main.overview,
+                    'hidden',
+                    Lang.bind(this, this._overviewOff)
+                ],
+                [
+                    Main.messageTray,
+                    'showing',
+                    Lang.bind(this, this._trayOn)
+                ],
+                [
+                    Main.messageTray,
+                    'hiding',
+                    Lang.bind(this, this._trayOff)
+                ]
+            );
+        } else {
+            this._signalHandler.push(
+                [
+                    this._target,
+                    'box-changed',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    this._target.dash,
+                    'redisplay-workspace-switched',
+                    Lang.bind(this, this._switchWorkspace)
+                ],
+                [
+                    global.display,
+                    'grab-op-begin',
+                    Lang.bind(this, this._grabOpBegin)
+                ],
+                [
+                    global.display,
+                    'grab-op-end',
+                    Lang.bind(this, this._grabOpEnd)
+                ],
+                [
+                    global.window_manager,
+                    'maximize',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    global.window_manager,
+                    'unmaximize',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    global.screen,
+                    'restacked',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    global.screen,
+                    'monitors-changed',
+                    Lang.bind(this, this._updateDockVisibility)
+                ],
+                [
+                    Main.overview,
+                    'showing',
+                    Lang.bind(this, this._overviewOn)
+                ],
+                [
+                    Main.overview,
+                    'hidden',
+                    Lang.bind(this, this._overviewOff)
+                ]
+            );
+        }
 
         // initialize: call show forcing to initialize status variable
         this._show(true);
@@ -205,48 +254,53 @@ const Intellihide = new Lang.Class({
 
     _updateDockVisibility: function() {
 
-        if (this.overviewShowing) {
-            this._show();
-        } else if (this.showMethod !== 0) {
+        // 3.14 Remove until '<' when losing compatibility
+        if (this.trayShowing) {
             this._hide();
-        } else {
-        
-            let overlaps = false;
-            let windows = global.get_window_actors();
+        } else /* < */ if (this.overviewShowing) {
+            this._show();
+        } else  if (this.showMethod === 2) {
+            this._show();
+        } else if (this.showMethod === 1) {
+            this._hide();
+        } else if (this.showMethod === 0) {
+         
+                let overlaps = false;
+                let windows = global.get_window_actors();
 
-            if (windows.length > 0) {
-                // This is the window on top of all others in the current workspace
-                let topWindow = windows[windows.length - 1].get_meta_window();
-                // If there isn't a focused app, use that of the window on top
-                this._focusApp = this._tracker.focus_app ||
-                    this._tracker.get_window_app(topWindow);
+                if (windows.length > 0) {
+                    // This is the window on top of all others in the current workspace
+                    let topWindow = windows[windows.length - 1].get_meta_window();
+                    // If there isn't a focused app, use that of the window on top
+                    this._focusApp = this._tracker.focus_app ||
+                        this._tracker.get_window_app(topWindow);
 
-                windows = windows.filter(this._intellihideFilterInteresting, this);
+                    windows = windows.filter(this._intellihideFilterInteresting, this);
 
-                for (let i = 0; i < windows.length; i++) {
+                    for (let i = 0; i < windows.length; i++) {
 
-                    let win = windows[i].get_meta_window();
-                    if (win) {
-                        let rect = win.get_frame_rect();
+                        let win = windows[i].get_meta_window();
+                        if (win) {
+                            let rect = win.get_frame_rect();
 
-                        let test = (rect.x < this._target.staticBox.x2) &&
-                            (rect.x +rect.width > this._target.staticBox.x1) &&
-                            (rect.y < this._target.staticBox.y2) &&
-                            (rect.y +rect.height > this._target.staticBox.y1);
+                            let test = (rect.x < this._target.staticBox.x2) &&
+                                (rect.x +rect.width > this._target.staticBox.x1) &&
+                                (rect.y < this._target.staticBox.y2) &&
+                                (rect.y +rect.height > this._target.staticBox.y1);
 
-                        if (test) {
-                            overlaps = true;
-                            break;
+                            if (test) {
+                                overlaps = true;
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            if (overlaps) {
-                this._hide();
-            } else {
-                this._show();
-            }
+                if (overlaps) {
+                    this._hide();
+                } else {
+                    this._show();
+                }
         }
         this._retop();
     },
@@ -337,9 +391,27 @@ const Intellihide = new Lang.Class({
         this.overviewShowing = false;
         this._updateDockVisibility();
     },
+    // 3.14 Remove until '<' when losing compatibility
+    _trayOn: function() {
+        this.trayShowing = true;
+        this._updateDockVisibility();
+    },
 
+    _trayOff: function() {
+        this.trayShowing = false;
+        this._updateDockVisibility();
+    },
+    // <
     setShowMethod: function(method) {
+        let trackActor = this._target.actor;
+        if (method === 2) {
+            Main.layoutManager._trackActor(trackActor, {affectsStruts: true});
+            this._target._resetPosition();
+        } else {
+            Main.layoutManager._untrackActor(trackActor);
+        }
+
         this.showMethod = method;
         this._updateDockVisibility();
-    } 
+    }
 });
