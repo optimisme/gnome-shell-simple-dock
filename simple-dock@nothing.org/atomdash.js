@@ -308,7 +308,7 @@ const AtomDash = new Lang.Class({
         this._showAppsIcon.icon.setIconSize(this.iconSize);
         this._showAppsIcon.connect('menu-state-changed',
             Lang.bind(this, function(appIcon, opened) {
-                this._itemMenuStateChanged(this._showAppsIcon, opened);
+                this._itemMenuStateChanged(appIcon, opened);
             })
         );
 
@@ -516,7 +516,7 @@ const AtomDash = new Lang.Class({
         item.setChild(appIcon.actor);
         appIcon.connect('menu-state-changed',
             Lang.bind(this, function(appIcon, opened) {
-                this._itemMenuStateChanged(item, opened);
+                this._itemMenuStateChanged(appIcon, opened);
             })
         );
 
