@@ -7,11 +7,14 @@ Bottom dock for gnome shell
 
 Featuring:
 
-- Intelligent auto hide.
 - Minimize focused application.
 - Drag and drop favorites.
-- Adapt notifications (Optional).
+- Action list menus
+- Adapt notifications (Optional for 3.14).
+- Applications button (Optional).
 - Adjust icon sizes (Optional)
+- Adjust background opacity (Optional)
+- Intelligent auto hide (Optional).
 
 INSTALLATION
 ------------
