@@ -37,6 +37,7 @@ function buildPrefsWidget() {
     // 3.14 Remove until '<' when losing compatibility
     let settingLabel = new Gtk.Label({ xalign: 1, label: _("Adapt message bar and notifications") + ":" });
     let settingSwitch = new Gtk.Switch({
+		hexpand: false,
         active: settings.get_boolean(SETTINGS_CHANGE_MESSAGE_TRAY)
     });
     settingSwitch.connect("notify::active", function(button) {
@@ -47,6 +48,7 @@ function buildPrefsWidget() {
 
     let showAppsLabel = new Gtk.Label({ xalign: 1, label: _("Show applications button") + "*:" });
     let showAppsSwitch = new Gtk.Switch({
+		hexpand: false,
         active: settings.get_boolean(SETTINGS_SHOW_APPS_BUTTON)
     });
     showAppsSwitch.connect("notify::active", function(button) {
@@ -108,10 +110,11 @@ function buildPrefsWidget() {
     });
 
     let infoLabel = new Gtk.Label({
-        xalign: 0,
+        halign: Gtk.Align.CENTER,
         label: _("*Settings are accessible from 'Applications button', use 'Tweak-Tool' when not shown"),
         margin_top: 15
     });
+	infoLabel.set_justify(Gtk.Justification.CENTER);
 
     grid = new Gtk.Grid({ column_spacing: 25, halign: Gtk.Align.CENTER, margin: 10, row_spacing: 10 });
     grid.set_border_width(15);

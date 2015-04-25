@@ -216,7 +216,10 @@ const AtomAppIconMenu = new Lang.Class({
             }
 
             this._appendFavorites(app);
-            this._appendQuit();
+
+            if (windows.length > 0) {
+                this._appendQuit();
+            }
         }
     },
 

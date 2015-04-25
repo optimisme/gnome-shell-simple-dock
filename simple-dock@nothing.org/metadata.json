@@ -3,8 +3,11 @@
   "description": "Bottom dock\n\nFeaturing:\n- Minimize focused application.\n- Drag and drop favorites. \n- Action list menus\n- Adapt notifications (Optional for 3.14).\n- Applications button (Optional).\n- Adjust icon sizes (Optional)\n- Adjust background opacity (Optional)\n- Intelligent auto hide (Optional).", 
   "name": "Simple Dock", 
   "settings-schema": "org.gnome.shell.extensions.simple-dock", 
-  "shell-version": [ "3.14", "3.16" ], 
+  "shell-version": [
+    "3.14", 
+    "3.16"
+  ], 
   "url": "https://github.com/optimisme/gnome-shell-simple-dock", 
   "uuid": "simple-dock@nothing.org", 
-  "version": 52
+  "version": 54
 }
