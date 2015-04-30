@@ -25,10 +25,14 @@ const AtomAppIcon = new Lang.Class({
     Extends: AppDisplay.AppIcon,
 
     _init : function(app, iconParams) {
+
         this.parent(app, iconParams, { setSizeManually: true, showLabel: false });
         this._windowsChangedId = this.app.connect('windows-changed', Lang.bind(this, this._onStateChanged));
-
+        this.actor.connect('scroll-event', Lang.bind(this, this._onScrollEvent));
         this.actor.set_style("padding: 0px;");
+
+        this.scrollWindow = 0;
+        this.scrollTime = 0;
     },
 
     activate: function (button) {
@@ -39,13 +43,13 @@ const AtomAppIcon = new Lang.Class({
                             this.app.state == Shell.AppState.RUNNING ||
                             button && button == 2;
         let focusedApp = Shell.WindowTracker.get_default().focus_app;
-        let windows = this.getAppInterestingWindows(this.app);
+        let windows = this.getAppInterestingWindows();
 
         if (openNewWindow) {
             this.app.open_new_window(-1);
         } else {
             if (this.app == focusedApp && !Main.overview._shown) {
-                this.minimizeWindow(windows);
+                this.setMinimizeGeometry(true);
             } else {
                 this.app.activate();
                 if(windows.length>0) {
@@ -59,7 +63,9 @@ const AtomAppIcon = new Lang.Class({
         Main.overview.hide();
     },
 
-    minimizeWindow: function (windows){
+    setMinimizeGeometry: function (minimize){
+
+        let windows = this.getAppInterestingWindows();
         let current_workspace = global.screen.get_active_workspace();
         let rect = new Meta.Rectangle();
 
@@ -70,7 +76,7 @@ const AtomAppIcon = new Lang.Class({
             let w = windows[i];
             if (w.get_workspace() == current_workspace && w.showing_on_its_workspace()){
                 w.set_icon_geometry(rect);
-                w.minimize();
+                if (minimize) { w.minimize(); }
             }
         }
     },
@@ -78,11 +84,7 @@ const AtomAppIcon = new Lang.Class({
     getAppInterestingWindows: function(app) {
         // Filter out unnecessary windows, for instance
         // nautilus desktop window.
-        let windows = app.get_windows().filter(function(w) {
-            return !w.skip_taskbar;
-        });
-
-        return windows;
+        return this.app.get_windows().filter(function(w) { return !w.skip_taskbar; });
     },
 
     _onStateChanged: function() {
@@ -91,6 +93,7 @@ const AtomAppIcon = new Lang.Class({
         } else {
             this.actor.remove_style_class_name('running');
         }
+        this.setMinimizeGeometry(false);
     },
 
     _onDestroy: function() {
@@ -100,6 +103,52 @@ const AtomAppIcon = new Lang.Class({
 
         this._windowsChangedId = 0;
         this.parent();
+    },
+
+    _onScrollEvent: function (actor, event) {
+
+        let now = Date.now();
+        if ((now - this.scrollTime) < 250) {
+            return;
+        }
+        this.scrollTime = now;
+
+        let windows = this.app.get_windows().filter(function(w) { return !w.skip_taskbar; }).sort(function (a, b) {
+            return a.get_stable_sequence() - b.get_stable_sequence();
+        });
+
+        let show = false;
+        let goUp = false;
+        let goDn = false;
+
+        if (windows.length > 1) {
+
+            switch (event.get_scroll_direction()) {
+            case Clutter.ScrollDirection.UP:
+                goUp = true;
+                break;
+            case Clutter.ScrollDirection.DOWN:
+                goDn = true;
+                break;
+            case Clutter.ScrollDirection.SMOOTH:
+                let [dx, dy] = event.get_scroll_delta();
+                if (dy === 0)    { show = true; }
+                if (dy >=  0.25) { goUp = true; }
+                if (dy <= -0.25) { goDn = true; }
+
+                break;
+            }
+
+            if (goUp){ this.scrollWindow = this.scrollWindow - 1; }
+            if (goDn) { this.scrollWindow = this.scrollWindow + 1; }
+        }
+
+        if (this.scrollWindow < 0) { this.scrollWindow = windows.length - 1; }
+        if (this.scrollWindow >= windows.length) { this.scrollWindow = 0; }
+
+        if (show || goUp || goDn) {
+            Main.activateWindow(windows[this.scrollWindow]);
+        }
     },
 
     popupMenu: function() {
