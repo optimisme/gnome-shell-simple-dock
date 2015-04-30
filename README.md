@@ -8,7 +8,9 @@ Bottom dock for gnome shell
 Featuring:
 
 - Minimize focused application.
+- Minimize to dock icon.
 - Drag and drop favorites.
+- Cycle windows with scroll.
 - Action list menus
 - Adapt notifications (Optional for 3.14).
 - Applications button (Optional).
