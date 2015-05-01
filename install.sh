@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Redirect 'sdtout' and 'stderr'
 exec 1>> /tmp/simple-dock-install
 exec 1>> /tmp/outfile 2>&1
