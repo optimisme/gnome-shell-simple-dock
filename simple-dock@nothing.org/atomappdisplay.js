@@ -28,11 +28,7 @@ const AtomAppIcon = new Lang.Class({
 
         this.parent(app, iconParams, { setSizeManually: true, showLabel: false });
         this._windowsChangedId = this.app.connect('windows-changed', Lang.bind(this, this._onStateChanged));
-        this.actor.connect('scroll-event', Lang.bind(this, this._onScrollEvent));
         this.actor.set_style("padding: 0px;");
-
-        this.scrollWindow = 0;
-        this.scrollTime = 0;
     },
 
     activate: function (button) {
@@ -103,52 +99,6 @@ const AtomAppIcon = new Lang.Class({
 
         this._windowsChangedId = 0;
         this.parent();
-    },
-
-    _onScrollEvent: function (actor, event) {
-
-        let now = Date.now();
-        if ((now - this.scrollTime) < 250) {
-            return;
-        }
-        this.scrollTime = now;
-
-        let windows = this.app.get_windows().filter(function(w) { return !w.skip_taskbar; }).sort(function (a, b) {
-            return a.get_stable_sequence() - b.get_stable_sequence();
-        });
-
-        let show = false;
-        let goUp = false;
-        let goDn = false;
-
-        if (windows.length > 1) {
-
-            switch (event.get_scroll_direction()) {
-            case Clutter.ScrollDirection.UP:
-                goUp = true;
-                break;
-            case Clutter.ScrollDirection.DOWN:
-                goDn = true;
-                break;
-            case Clutter.ScrollDirection.SMOOTH:
-                let [dx, dy] = event.get_scroll_delta();
-                if (dy === 0)    { show = true; }
-                if (dy >=  0.25) { goUp = true; }
-                if (dy <= -0.25) { goDn = true; }
-
-                break;
-            }
-
-            if (goUp){ this.scrollWindow = this.scrollWindow - 1; }
-            if (goDn) { this.scrollWindow = this.scrollWindow + 1; }
-        }
-
-        if (this.scrollWindow < 0) { this.scrollWindow = windows.length - 1; }
-        if (this.scrollWindow >= windows.length) { this.scrollWindow = 0; }
-
-        if (show || goUp || goDn) {
-            Main.activateWindow(windows[this.scrollWindow]);
-        }
     },
 
     popupMenu: function() {

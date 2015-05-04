@@ -7,6 +7,7 @@ const Mainloop = imports.mainloop;
 const Signals = imports.signals;
 const Clutter = imports.gi.Clutter;
 const Gtk = imports.gi.Gtk;
+const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 
 const Main = imports.ui.main;
@@ -70,6 +71,7 @@ const AtomDock = new Lang.Class({
         });
 
         this._box.connect("notify::hover", Lang.bind(this, this._hoverChanged));
+        this._box.connect('scroll-event', Lang.bind(this, this.onScrollEvent));
 
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._signalHandler.push(
@@ -405,6 +407,70 @@ const AtomDock = new Lang.Class({
                 this._animStatus.end();
             })
         });
+    },
+
+    // Show previous/next application window
+    onScrollEvent: function (actor, event) {
+
+        // Limit fast scrolls
+        if (typeof this.scrollTime === 'undefined') { this.scrollTime = 0; }
+        let now = Date.now();
+        if ((now - this.scrollTime) < 200)   { return; }
+        this.scrollTime = now;
+
+        // Get scroll direction
+        let goUp = false;
+        let goDn = false;
+        switch (event.get_scroll_direction()) {
+        case Clutter.ScrollDirection.SMOOTH:
+            let [dx, dy] = event.get_scroll_delta();
+            if (dy === 0) { show = true; }
+            if (dy >=  1) { goUp = true; }
+            if (dy <= -1) { goDn = true; }
+            break;
+        case Clutter.ScrollDirection.UP:
+            goUp = true;
+            break;
+        case Clutter.ScrollDirection.DOWN:
+            goDn = true;
+            break;
+        }
+        if (goUp) { diff = -1; }
+        if (goDn) { diff = +1; }
+
+        // Get running windows (and active one)
+        let children = this.getRunningWindows();
+        let active = 0;
+        for (let i = 0; i < children.length; i++) {
+            if (children[i].has_focus()) {
+                active = i;
+                break;
+            }
+        }
+
+        // Set new active window
+        active = active + diff;
+        if (active >= children.length) {
+            active = 0;
+        }
+        if (active < 0) {
+            active = children.length - 1;
+        }
+        Main.activateWindow(children[active]);
+    },
+
+    getRunningWindows: function () {
+        let apps = Shell.AppSystem.get_default().get_running().sort();
+        let windows = [];
+        let counter = 0;
+
+        for (counter = 0; counter < apps.length; counter = counter + 1) {
+            appWindows = apps[counter].get_windows().filter(function(w) { return !w.skip_taskbar; }).sort(function (a, b) {
+                return a.get_stable_sequence() - b.get_stable_sequence();
+            });
+            windows = windows.concat(appWindows);
+        }
+        return windows;
     },
 
     // Put on top again
