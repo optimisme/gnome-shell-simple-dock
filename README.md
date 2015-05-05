@@ -38,6 +38,7 @@ Then, use 'Gnome tweak tool' to activate the extension
 CUSTOMIZATION
 ------------
 
+Right clicking on applications button and choosing 'Simple Dock Settings'
 Using 'Tweak tool' (can be installed from 'Software'), the extension can be customized or disabled.
 
 UNINSTALLATION
