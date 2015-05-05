@@ -30,6 +30,7 @@ Manually (up to date version):
     cd ~
     git clone https://github.com/optimisme/gnome-shell-simple-dock.git
     cd gnome-shell-simple-dock
+    chmod 744 install.sh
     ./install.sh
 
 Then, use 'Gnome tweak tool' to activate the extension
