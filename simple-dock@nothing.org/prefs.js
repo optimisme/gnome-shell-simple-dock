@@ -5,9 +5,6 @@ const Config = imports.misc.config;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
 const _ = imports.gettext.domain(Me.uuid).gettext;
 
-// 3.14 Remove until '<' when losing compatibility
-const SETTINGS_CHANGE_MESSAGE_TRAY = "change-message-tray";
-// <
 const SETTINGS_SHOW_APPS_BUTTON = "show-apps-button";
 const SETTINGS_SHOW_METHOD = "show-method";
 const SETTINGS_MAX_ICON_SIZE = "max-icon-size";
@@ -33,18 +30,6 @@ function init() {
 }
 
 function buildPrefsWidget() {
-
-    // 3.14 Remove until '<' when losing compatibility
-    let settingLabel = new Gtk.Label({ xalign: 1, label: _("Adapt message bar and notifications") + ":" });
-    let settingSwitch = new Gtk.Switch({
-		hexpand: false,
-        active: settings.get_boolean(SETTINGS_CHANGE_MESSAGE_TRAY)
-    });
-    settingSwitch.connect("notify::active", function(button) {
-        settings.set_boolean(SETTINGS_CHANGE_MESSAGE_TRAY, button.active);
-    });
-    settingSwitch.set_tooltip_text(_("Sets bottom message tray corners and moves notifications to the top bar"));
-    // < 
 
     let showAppsLabel = new Gtk.Label({ xalign: 1, label: _("Show applications button") + "*:" });
     let showAppsSwitch = new Gtk.Switch({
@@ -118,12 +103,7 @@ function buildPrefsWidget() {
 
     grid = new Gtk.Grid({ column_spacing: 25, halign: Gtk.Align.CENTER, margin: 10, row_spacing: 10 });
     grid.set_border_width(15);
-    // 3.14 Remove until '<' when losing compatibility
-    if (Config.PACKAGE_VERSION.indexOf("3.14.") !== -1) {
-        grid.attach(settingLabel,       0, 0, 1, 1);
-        grid.attach(settingSwitch,      1, 0, 1, 1);
-    }
-    // <
+
     grid.attach(showAppsLabel,      0, 1, 1, 1);
     grid.attach(showAppsSwitch,     1, 1, 1, 1);
     grid.attach(iconSizeLabel,      0, 2, 1, 1);

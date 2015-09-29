@@ -44,9 +44,7 @@ const Intellihide = new Lang.Class({
         this._focusApp = null;
         this.showMethod = 0;
         this.overviewShowing = false;
-        // 3.14 Remove until '<' when losing compatibility
-        this.trayShowing = false;
-        // <
+
         // current intellihide status
         this.status = undefined;
         // Set base functions
@@ -62,124 +60,58 @@ const Intellihide = new Lang.Class({
         this._windowChangedTimeout = 0;
 
         // Connect global signals
-        // 3.14 Remove next if "3.14" ... when losing compatibility
-        if (Config.PACKAGE_VERSION.indexOf("3.14.") !== -1) {
-            this._signalHandler.push(
-                [
-                    this._target,
-                    'box-changed',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    this._target.dash,
-                    'redisplay-workspace-switched',
-                    Lang.bind(this, this._switchWorkspace)
-                ],
-                [
-                    global.display,
-                    'grab-op-begin',
-                    Lang.bind(this, this._grabOpBegin)
-                ],
-                [
-                    global.display,
-                    'grab-op-end',
-                    Lang.bind(this, this._grabOpEnd)
-                ],
-                [
-                    global.window_manager,
-                    'maximize',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    global.window_manager,
-                    'unmaximize',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    global.screen,
-                    'restacked',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    global.screen,
-                    'monitors-changed',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    Main.overview,
-                    'showing',
-                    Lang.bind(this, this._overviewOn)
-                ],
-                [
-                    Main.overview,
-                    'hidden',
-                    Lang.bind(this, this._overviewOff)
-                ],
-                [
-                    Main.messageTray,
-                    'showing',
-                    Lang.bind(this, this._trayOn)
-                ],
-                [
-                    Main.messageTray,
-                    'hiding',
-                    Lang.bind(this, this._trayOff)
-                ]
-            );
-        } else {
-            this._signalHandler.push(
-                [
-                    this._target,
-                    'box-changed',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    this._target.dash,
-                    'redisplay-workspace-switched',
-                    Lang.bind(this, this._switchWorkspace)
-                ],
-                [
-                    global.display,
-                    'grab-op-begin',
-                    Lang.bind(this, this._grabOpBegin)
-                ],
-                [
-                    global.display,
-                    'grab-op-end',
-                    Lang.bind(this, this._grabOpEnd)
-                ],
-                [
-                    global.window_manager,
-                    'maximize',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    global.window_manager,
-                    'unmaximize',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    global.screen,
-                    'restacked',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    global.screen,
-                    'monitors-changed',
-                    Lang.bind(this, this._updateDockVisibility)
-                ],
-                [
-                    Main.overview,
-                    'showing',
-                    Lang.bind(this, this._overviewOn)
-                ],
-                [
-                    Main.overview,
-                    'hidden',
-                    Lang.bind(this, this._overviewOff)
-                ]
-            );
-        }
+        this._signalHandler.push(
+        [
+            this._target,
+            'box-changed',
+            Lang.bind(this, this._updateDockVisibility)
+        ],
+        [
+            this._target.dash,
+            'redisplay-workspace-switched',
+            Lang.bind(this, this._switchWorkspace)
+        ],
+        [
+            global.display,
+            'grab-op-begin',
+            Lang.bind(this, this._grabOpBegin)
+        ],
+        [
+            global.display,
+            'grab-op-end',
+            Lang.bind(this, this._grabOpEnd)
+        ],
+        [
+            global.window_manager,
+            'maximize',
+            Lang.bind(this, this._updateDockVisibility)
+        ],
+        [
+            global.window_manager,
+            'unmaximize',
+            Lang.bind(this, this._updateDockVisibility)
+        ],
+        [
+            global.screen,
+            'restacked',
+            Lang.bind(this, this._updateDockVisibility)
+        ],
+        [
+            global.screen,
+            'monitors-changed',
+            Lang.bind(this, this._updateDockVisibility)
+        ],
+        [
+            Main.overview,
+            'showing',
+            Lang.bind(this, this._overviewOn)
+        ],
+        [
+            Main.overview,
+            'hidden',
+            Lang.bind(this, this._overviewOff)
+        ]
+        );
 
         // initialize: call show forcing to initialize status variable
         this._show(true);
@@ -254,10 +186,7 @@ const Intellihide = new Lang.Class({
 
     _updateDockVisibility: function() {
 
-        // 3.14 Remove until '<' when losing compatibility
-        if (this.trayShowing) {
-            this._hide();
-        } else /* < */ if (this.overviewShowing) {
+        if (this.overviewShowing) {
             this._show();
         } else  if (this.showMethod === 2) {
             this._show();
@@ -391,17 +320,7 @@ const Intellihide = new Lang.Class({
         this.overviewShowing = false;
         this._updateDockVisibility();
     },
-    // 3.14 Remove until '<' when losing compatibility
-    _trayOn: function() {
-        this.trayShowing = true;
-        this._updateDockVisibility();
-    },
 
-    _trayOff: function() {
-        this.trayShowing = false;
-        this._updateDockVisibility();
-    },
-    // <
     setShowMethod: function(method) {
         let trackActor = this._target.actor;
         if (method === 2) {

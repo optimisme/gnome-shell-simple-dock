@@ -47,11 +47,6 @@ const AtomDock = new Lang.Class({
         // Used to store dock position for intellihide checking
         this.staticBox = new Clutter.ActorBox();
 
-        // 3.14 Remove until '<' when losing compatibility
-        // Draw animation height for message tray
-        this.trayHeight = 0;
-        // <
-
         // Create dash
         this.dash = new AtomDash.AtomDash();
 
@@ -366,8 +361,7 @@ const AtomDock = new Lang.Class({
    _animateIn: function(time, delay) {
         this._animStatus.queue(true);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - this._box.height
-                /* 3.14 Remove until '<' when losing compatibility */ - this.trayHeight /* < */,
+            y: this._monitor.y + this._monitor.height - this._box.height,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
@@ -389,8 +383,7 @@ const AtomDock = new Lang.Class({
     _animateOut: function(time, delay) {
         this._animStatus.queue(false);
         Tweener.addTween(this.actor, {
-            y: this._monitor.y + this._monitor.height - 1
-                /* 3.14 Remove until '<' when losing compatibility */ - this.trayHeight /* < */,
+            y: this._monitor.y + this._monitor.height - 1,
             time: time,
             delay: delay,
             transition: 'easeOutQuad',
