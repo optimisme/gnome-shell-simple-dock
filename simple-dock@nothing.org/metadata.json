@@ -4,7 +4,6 @@
   "name": "Simple Dock", 
   "settings-schema": "org.gnome.shell.extensions.simple-dock", 
   "shell-version": [
-    "3.16",
     "3.17.91",
     "3.18"
   ], 

@@ -44,8 +44,7 @@ function settingsBackgroundChanged() {
 // Init settings
 function initSettings() {
     const GioSSS = Gio.SettingsSchemaSource;
-    let schemaSource = GioSSS.new_from_directory(Me.path + "/schemas", 
-            GioSSS.get_default(), false);
+    let schemaSource = GioSSS.new_from_directory(Me.path + "/schemas", GioSSS.get_default(), false);
 
     let schemaObj = schemaSource.lookup(Me.metadata["settings-schema"], true);
     if(!schemaObj) {
@@ -84,6 +83,7 @@ function enable() {
     } else {
         atomDock.setMaxIconSize(48, false);
     }
+
     let appsButton = settings.get_boolean(SETTINGS_SHOW_APPS_BUTTON);
     if (typeof appsButton !== 'undefined') {
         atomDock.setShowAppsButton(appsButton);
@@ -91,10 +91,11 @@ function enable() {
         atomDock.setShowAppsButton(true);
     }
 
-	let backOpacity = settings.get_double(SETTINGS_BACKGROUND_OPACITY);
+    let backOpacity = settings.get_double(SETTINGS_BACKGROUND_OPACITY);
     atomDock.setBackgroundOpacity(backOpacity, true);
 
     intellihide = new Intellihide.Intellihide(show, hide, retop, atomDock);
+
     let showMethod = settings.get_int(SETTINGS_SHOW_METHOD);
     if (showMethod) {
         intellihide.setShowMethod(showMethod);

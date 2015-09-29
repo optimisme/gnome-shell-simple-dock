@@ -39,6 +39,7 @@ const Intellihide = new Lang.Class({
     Name: 'Intellihide',
 
     _init: function(show, hide, retop, target) {
+
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._tracker = Shell.WindowTracker.get_default();
         this._focusApp = null;
@@ -61,56 +62,51 @@ const Intellihide = new Lang.Class({
 
         // Connect global signals
         this._signalHandler.push(
-        [
-            this._target,
-            'box-changed',
-            Lang.bind(this, this._updateDockVisibility)
-        ],
-        [
-            this._target.dash,
-            'redisplay-workspace-switched',
-            Lang.bind(this, this._switchWorkspace)
-        ],
-        [
-            global.display,
-            'grab-op-begin',
-            Lang.bind(this, this._grabOpBegin)
-        ],
-        [
-            global.display,
-            'grab-op-end',
-            Lang.bind(this, this._grabOpEnd)
-        ],
-        [
-            global.window_manager,
-            'maximize',
-            Lang.bind(this, this._updateDockVisibility)
-        ],
-        [
-            global.window_manager,
-            'unmaximize',
-            Lang.bind(this, this._updateDockVisibility)
-        ],
-        [
-            global.screen,
-            'restacked',
-            Lang.bind(this, this._updateDockVisibility)
-        ],
-        [
-            global.screen,
-            'monitors-changed',
-            Lang.bind(this, this._updateDockVisibility)
-        ],
-        [
-            Main.overview,
-            'showing',
-            Lang.bind(this, this._overviewOn)
-        ],
-        [
-            Main.overview,
-            'hidden',
-            Lang.bind(this, this._overviewOff)
-        ]
+            [
+                this._target,
+                'box-changed',
+                Lang.bind(this, this._updateDockVisibility)
+            ],
+            [
+                this._target.dash,
+                'redisplay-workspace-switched',
+                Lang.bind(this, this._switchWorkspace)
+            ],
+            [
+                global.display,
+                'grab-op-begin',
+                Lang.bind(this, this._grabOpBegin)
+            ],
+            [
+                global.display,
+                'grab-op-end',
+                Lang.bind(this, this._grabOpEnd)
+            ],
+            [
+                global.window_manager,
+                'size-change',
+                Lang.bind(this, this._updateDockVisibility)
+            ],
+            [
+                global.screen,
+                'restacked',
+                Lang.bind(this, this._updateDockVisibility)
+            ],
+            [
+                global.screen,
+                'monitors-changed',
+                Lang.bind(this, this._updateDockVisibility)
+            ],
+            [
+                Main.overview,
+                'showing',
+                Lang.bind(this, this._overviewOn)
+            ],
+            [
+                Main.overview,
+                'hidden',
+                Lang.bind(this, this._overviewOff)
+            ]
         );
 
         // initialize: call show forcing to initialize status variable
