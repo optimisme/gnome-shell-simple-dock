@@ -67,10 +67,6 @@ function hide() {
     atomDock.intelliHide();
 }
 
-function retop() {
-    atomDock.retop();
-}
-
 function enable() {
     // Hide old dash
     oldDash.hideDash();
@@ -94,7 +90,7 @@ function enable() {
     let backOpacity = settings.get_double(SETTINGS_BACKGROUND_OPACITY);
     atomDock.setBackgroundOpacity(backOpacity, true);
 
-    intellihide = new Intellihide.Intellihide(show, hide, retop, atomDock);
+    intellihide = new Intellihide.Intellihide(show, hide, atomDock);
 
     let showMethod = settings.get_int(SETTINGS_SHOW_METHOD);
     if (showMethod) {

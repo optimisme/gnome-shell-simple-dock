@@ -38,7 +38,7 @@ const handledWindowTypes = [
 const Intellihide = new Lang.Class({
     Name: 'Intellihide',
 
-    _init: function(show, hide, retop, target) {
+    _init: function(show, hide, target) {
 
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._tracker = Shell.WindowTracker.get_default();
@@ -51,7 +51,6 @@ const Intellihide = new Lang.Class({
         // Set base functions
         this.showFunction = show;
         this.hideFunction = hide;
-        this.retopFunction = retop;
         // Target object
         this._target = target;
 
@@ -145,10 +144,6 @@ const Intellihide = new Lang.Class({
 
     },
 
-    _retop: function() {
-        this.retopFunction();
-    },
-
     _grabOpBegin: function() {
         // A good compromise between reactivity and efficiency; to be tuned.
         let INTERVAL = 100;
@@ -227,7 +222,6 @@ const Intellihide = new Lang.Class({
                     this._show();
                 }
         }
-        this._retop();
     },
 
     /* Filter interesting windows to be considered for intellihide.

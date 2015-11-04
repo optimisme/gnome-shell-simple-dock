@@ -466,11 +466,6 @@ const AtomDock = new Lang.Class({
         return windows;
     },
 
-    // Put on top again
-    retop: function() {
-        global.window_group.set_child_above_sibling(this.actor, null);
-    },
-
     // Show or hide applications button
     setShowAppsButton: function(show) {
         this.dash.setShowAppsButton(show);
