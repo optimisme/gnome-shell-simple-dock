@@ -78,14 +78,14 @@ const AppsIconMenu = new Lang.Class({
 
         // Chain our visibility and lifecycle to that of the source
         source.actor.connect('notify::mapped',
-            Lang.bind(this, function() {
+            () => {
                 if (!source.actor.mapped) {
                     this.close();
                 }
-            })
+            }
         );
 
-        source.actor.connect('destroy', Lang.bind(this, this.actor.destroy));
+        source.actor.connect('destroy', () => { this.actor.destroy(); });
 
         Main.uiGroup.add_actor(this.actor);
     },
@@ -93,10 +93,10 @@ const AppsIconMenu = new Lang.Class({
     _redisplay: function() {
         this.removeAll();
         this._settingsMenuItem = this._appendMenuItem(_("Simple Dock Settings"));
-        this._settingsMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+        this._settingsMenuItem.connect('activate', (actor, event) => {
             Util.spawn(["gnome-shell-extension-prefs", Me.metadata.uuid]);
             this.close();
-        }));
+        });
     },
 
     _appendSeparator: function () {
@@ -155,11 +155,11 @@ function extendShowAppsIcon(showAppsIcon){
 
         if (!showAppsIcon._menu) {
             showAppsIcon._menu = new AppsIconMenu(showAppsIcon);
-            showAppsIcon._menu.connect('open-state-changed', Lang.bind(showAppsIcon, function (menu, isPoppedUp) {
+            showAppsIcon._menu.connect('open-state-changed', (menu, isPoppedUp) => {
             if (!isPoppedUp)
                 showAppsIcon._onMenuPoppedDown();
-            }));
-            let id = Main.overview.connect('hiding', Lang.bind(showAppsIcon, function () { showAppsIcon._menu.close(); }));
+            });
+            let id = Main.overview.connect('hiding', () => { showAppsIcon._menu.close(); });
             showAppsIcon.actor.connect('destroy', function() {
                     Main.overview.disconnect(id);
                 });
@@ -307,91 +307,71 @@ const AtomDash = new Lang.Class({
         this._showAppsIcon.childOpacity = 255;
         this._showAppsIcon.icon.setIconSize(this.iconSize);
         this._showAppsIcon.connect('menu-state-changed',
-            Lang.bind(this, function(appIcon, opened) {
+            (appIcon, opened) => {
                 this._itemMenuStateChanged(appIcon, opened);
-            })
+            }
         );
 
         this._hookUpLabel(this._showAppsIcon);
 
         this.showAppsButton = this._showAppsIcon.toggleButton;
         this.showAppsButton.set_style("padding: 0px;");
-        this.showAppsButton.connect('notify::checked', Lang.bind(this, this._onShowAppsButtonToggled));
+        this.showAppsButton.connect('notify::checked', () => { this._onShowAppsButtonToggled(); });
 
         this._container.add_actor(this._showAppsIcon);
 
         this.actor = new St.Bin({ child: this._container });
         this.actor.connect('notify::width',
-            Lang.bind(this, function() {
+            () => {
                 if (this._maxWidth !== this.actor.width) {
                     this._queueRedisplay();
                 }
 
                 this._maxWidth = this.actor.width;
-            })
+            }
         );
 
-        this._workId = Main.initializeDeferredWork(this._box,
-            Lang.bind(this, this._redisplay)
-        );
+        this._workId = Main.initializeDeferredWork(this._box, () => { this._redisplay(); });
 
         this._appSystem = Shell.AppSystem.get_default();
 
         this._signalHandler.push(
             [
-                global.screen,
-                'monitors-changed',
-                Lang.bind(this, function() {
+                global.screen, 'monitors-changed', () => {
                     this._monitorWidth = this._getMonitorWidth();
                     this._queueRedisplay();
-                })
+                }
             ],
             [
-                global.screen,
-                'workspace-switched',
-                Lang.bind(this, function() {
+                global.screen, 'workspace-switched', () => {
                     // Placeholder variable to tell redisplay that this is workspace switched event
                     this._workspaceSwitched = true;
                     this._queueRedisplay();
-                })
+                }
             ],
             [
-                this._appSystem,
-                'installed-changed',
-                Lang.bind(this, function() {
+                this._appSystem, 'installed-changed', () => {
                     AppFavorites.getAppFavorites().reload();
                     this._queueRedisplay();
-                })
+                }
             ],
             [
-                AppFavorites.getAppFavorites(),
-                'changed',
-                Lang.bind(this, this._queueRedisplay)
+                AppFavorites.getAppFavorites(), 'changed', () => { this._queueRedisplay(); }
             ],
             [
-                this._appSystem,
-                'app-state-changed',
-                Lang.bind(this, this._queueRedisplay)
+                this._appSystem, 'app-state-changed', () => { this._queueRedisplay(); }
             ],
             [
-                Main.overview,
-                'item-drag-begin',
-                Lang.bind(this, this._onDragBegin)
+                Main.overview, 'item-drag-begin', () => { this._onDragBegin(); }
             ],
             [
-                Main.overview,
-                'item-drag-end',
-                Lang.bind(this, this._onDragEnd)
+                Main.overview, 'item-drag-end', () => { this._onDragEnd(); }
             ],
             [
-                Main.overview,
-                'item-drag-cancelled',
-                Lang.bind(this, this._onDragCancelled)
+                Main.overview, 'item-drag-cancelled', () => { this._onDragCancelled(); }
             ],
             [
-                Main.overview.viewSelector._showAppsButton,
-                'notify::checked',
-                Lang.bind(this, this._syncShowAppsButtonToggled)
+                Main.overview.viewSelector._showAppsButton, 'notify::checked', () => { this._syncShowAppsButtonToggled(); }
             ]
         );
     },
@@ -478,19 +458,19 @@ const AtomDash = new Lang.Class({
     },
 
     _hookUpLabel: function(item, appIcon) {
-        item.child.connect('notify::hover', Lang.bind(this, function() {
+        item.child.connect('notify::hover', () => {
             this._syncLabel(item, appIcon);
-        }));
+        });
 
-        Main.overview.connect('hiding', Lang.bind(this, function() {
+        Main.overview.connect('hiding', () => {
             this._labelShowing = false;
             item.hideLabel();
-        }));
+        });
 
         if (appIcon) {
-            appIcon.connect('sync-tooltip', Lang.bind(this, function() {
+            appIcon.connect('sync-tooltip', () => {
                 this._syncLabel(item, appIcon);
-            }));
+            });
         }
     },
 
@@ -501,23 +481,23 @@ const AtomDash = new Lang.Class({
         });
 
         appIcon._draggable.connect('drag-begin',
-            Lang.bind(this, function() {
+            () => {
                 appIcon.actor.opacity = 50;
-            })
+            }
         );
 
         appIcon._draggable.connect('drag-end',
-           Lang.bind(this, function() {
+           () => {
                appIcon.actor.opacity = 255;
-           })
+           }
         );
 
         let item = new AtomDashItemContainer();
         item.setChild(appIcon.actor);
         appIcon.connect('menu-state-changed',
-            Lang.bind(this, function(appIcon, opened) {
+            (appIcon, opened) => {
                 this._itemMenuStateChanged(appIcon, opened);
-            })
+            }
         );
 
         // Override default AppIcon label_actor, now the
@@ -548,38 +528,33 @@ const AtomDash = new Lang.Class({
     _syncLabel: function (item, appIcon) {
 
         let shouldShow = appIcon ? appIcon.shouldShowTooltip() : item.child.get_hover();
-
         if (shouldShow && this._showLabelTimeoutId === 0) {
             let timeout = this._labelShowing ? 0 : DASH_ITEM_HOVER_TIMEOUT;
             this._showLabelTimeoutId = Mainloop.timeout_add(timeout,
-                Lang.bind(this, function() {
+                () => {
                     this._labelShowing = true;
                     item.showLabel();
+                    this._showLabelTimeoutId = 0;
                     return false;
-                })
-            );
+                }, null);
 
             if (this._resetHoverTimeoutId > 0) {
                 Mainloop.source_remove(this._resetHoverTimeoutId);
                 this._resetHoverTimeoutId = 0;
             }
         } else {
-
             if (this._showLabelTimeoutId > 0) {
                 Mainloop.source_remove(this._showLabelTimeoutId);
+                this._showLabelTimeoutId = 0;
             }
-
-            this._showLabelTimeoutId = 0;
             item.hideLabel();
-
             if (this._labelShowing) {
                 this._resetHoverTimeoutId = Mainloop.timeout_add(DASH_ITEM_HOVER_TIMEOUT,
-                    Lang.bind(this, function() {
+                    () => {
                         this._labelShowing = false;
-
+                        this._resetHoverTimeoutId = 0;
                         return false;
-                    })
-                );
+                    }, null);
             }
         }
     },
@@ -871,9 +846,9 @@ const AtomDash = new Lang.Class({
             this._animatingPlaceholdersCount++;
             this._dragPlaceholder.animateOutAndDestroy();
             this._dragPlaceholder.connect('destroy',
-                Lang.bind(this, function() {
+                () => {
                     this._animatingPlaceholdersCount--;
-                })
+                }
             );
             this._dragPlaceholder = null;
         }
@@ -1008,7 +983,7 @@ const AtomDash = new Lang.Class({
             return true;
         }
 
-        Meta.later_add(Meta.LaterType.BEFORE_REDRAW, Lang.bind(this, function() {
+        Meta.later_add(Meta.LaterType.BEFORE_REDRAW, () => {
             let appFavorites = AppFavorites.getAppFavorites();
 
             if (srcIsFavorite) {
@@ -1018,7 +993,7 @@ const AtomDash = new Lang.Class({
             }
 
             return false;
-        }));
+        });
 
         return true;
     },

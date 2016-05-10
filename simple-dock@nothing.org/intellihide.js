@@ -62,49 +62,31 @@ const Intellihide = new Lang.Class({
         // Connect global signals
         this._signalHandler.push(
             [
-                this._target,
-                'box-changed',
-                Lang.bind(this, this._updateDockVisibility)
+                this._target, 'box-changed', () => { this._updateDockVisibility(); }
             ],
             [
-                this._target.dash,
-                'redisplay-workspace-switched',
-                Lang.bind(this, this._switchWorkspace)
+                this._target.dash, 'redisplay-workspace-switched', () => { this._updateDockVisibility(); }
             ],
             [
-                global.display,
-                'grab-op-begin',
-                Lang.bind(this, this._grabOpBegin)
+                global.display, 'grab-op-begin', () => { this._grabOpBegin(); }
             ],
             [
-                global.display,
-                'grab-op-end',
-                Lang.bind(this, this._grabOpEnd)
+                global.display, 'grab-op-end',  () => { this._grabOpEnd(); }
             ],
             [
-                global.window_manager,
-                'size-change',
-                Lang.bind(this, this._updateDockVisibility)
+                global.window_manager, 'size-change', () => { this._updateDockVisibility(); }
             ],
             [
-                global.screen,
-                'restacked',
-                Lang.bind(this, this._updateDockVisibility)
+                global.screen, 'restacked', () => { this._updateDockVisibility(); }
             ],
             [
-                global.screen,
-                'monitors-changed',
-                Lang.bind(this, this._updateDockVisibility)
+                global.screen, 'monitors-changed', () => { this._updateDockVisibility(); }
             ],
             [
-                Main.overview,
-                'showing',
-                Lang.bind(this, this._overviewOn)
+                Main.overview, 'showing', () => { this._overviewOn(); }
             ],
             [
-                Main.overview,
-                'hidden',
-                Lang.bind(this, this._overviewOff)
+                Main.overview, 'hidden', () => { this._overviewOff(); }
             ]
         );
 
@@ -152,13 +134,11 @@ const Intellihide = new Lang.Class({
             Mainloop.source_remove(this._windowChangedTimeout); // Just to be sure
         }
 
-        this._windowChangedTimeout = Mainloop.timeout_add(INTERVAL,
-            Lang.bind(this, function() {
-                this._updateDockVisibility();
-                // to make the loop continue
-                return true;
-            })
-        );
+        this._windowChangedTimeout = Mainloop.timeout_add(INTERVAL, () => {
+            this._updateDockVisibility();
+            // to make the loop continue
+            return true;
+        });
     },
 
     _grabOpEnd: function() {
@@ -168,10 +148,6 @@ const Intellihide = new Lang.Class({
         }
 
         this._windowChangedTimeout = 0;
-        this._updateDockVisibility();
-    },
-
-    _switchWorkspace: function() {
         this._updateDockVisibility();
     },
 

@@ -27,7 +27,7 @@ const AtomAppIcon = new Lang.Class({
     _init : function(app, iconParams) {
 
         this.parent(app, iconParams, { setSizeManually: true, showLabel: false });
-        this._windowsChangedId = this.app.connect('windows-changed', Lang.bind(this, this._onStateChanged));
+        this._windowsChangedId = this.app.connect('windows-changed', () => { this._onStateChanged(); });
         this.actor.set_style("padding: 0px;");
     },
 
@@ -70,6 +70,7 @@ const AtomAppIcon = new Lang.Class({
 
         for (let i = 0; i < windows.length; i++) {
             let w = windows[i];
+            print(w);
             if (w.get_workspace() == current_workspace && w.showing_on_its_workspace()){
                 w.set_icon_geometry(rect);
                 if (minimize) { w.minimize(); }
@@ -108,17 +109,13 @@ const AtomAppIcon = new Lang.Class({
 
         if (!this._menu) {
             this._menu = new AtomAppIconMenu(this);
-            this._menu.connect('activate-window', Lang.bind(this, function (menu, window) {
-                    this.activateWindow(window);
-                })
-            );
-            this._menu.connect('open-state-changed', Lang.bind(this, function (menu, isPoppedUp) {
-                    if (!isPoppedUp) {
+            this._menu.connect('activate-window', (menu, window) => { this.activateWindow(window); });
+            this._menu.connect('open-state-changed', (menu, isPoppedUp) => {
+                if (!isPoppedUp) {
                         this._onMenuPoppedDown();
-                    }
-                })
-            );
-            Main.overview.connect('hiding', Lang.bind(this, this._menu.close));
+                }
+            });
+            Main.overview.connect('hiding', () => { this._menu.close(); });
             this._menuManager.addMenu(this._menu);
         }
 
@@ -152,18 +149,16 @@ const AtomAppIconMenu = new Lang.Class({
         // We want to keep the item hovered while the menu is up
         this.blockSourceEvents = true;
         this._source = source;
-        this.actor.add_style_class_name('app-well-menu');
+        this.actor.add_style_class_name('emblem-favorite');
 
         // Chain our visibility and lifecycle to that of the source
-        source.actor.connect('notify::mapped',
-            Lang.bind(this, function() {
-                if (!source.actor.mapped) {
-                    this.close();
-                }
-            })
-        );
+        source.actor.connect('notify::mapped', () => {
+            if (!source.actor.mapped) {
+                this.close();
+            }
+        });
 
-        source.actor.connect('destroy', Lang.bind(this, this.actor.destroy));
+        source.actor.connect('destroy', () => { this.actor.destroy(); });
         Main.uiGroup.add_actor(this.actor);
     },
 
@@ -232,10 +227,10 @@ const AtomAppIconMenu = new Lang.Class({
             if (name.length > chars) { name = name.substring(0, 15) + '...' + name.substring(name.length - (chars - 15)); }
             this._windowMenuItems[i] = this._appendMenuItem(name);
             this._windowMenuItems[i]._refWindow = windows[i];
-            this._windowMenuItems[i].connect('activate', Lang.bind(this, function (actor, event) {
+            this._windowMenuItems[i].connect('activate', (actor, event) => {
                 this.emit('activate-window', actor._refWindow);
                 this.close();
-            }));
+            });
         }
     },
 
@@ -247,12 +242,12 @@ const AtomAppIconMenu = new Lang.Class({
             this._actionMenuItems[i] = this._appendMenuItem(appInfo.get_action_name(actions[i]));
             this._actionMenuItems[i]._refAction = actions[i];
             this._actionMenuItems[i]._refWindow = windows[0];
-            this._actionMenuItems[i].connect('activate', Lang.bind(this, function (actor, event) {
+            this._actionMenuItems[i].connect('activate', (actor, event) => {
                 let app = this._source.app;
                 app.launch_action(actor._refAction, event.get_time(), -1);
                 this.emit('activate-window', actor._refWindow);
                 this.close();
-            }));
+            });
         }
     },
 
@@ -261,24 +256,24 @@ const AtomAppIconMenu = new Lang.Class({
         // Add 'new window' button only if there are open windows and there is no 'action'
         this._newWindowMenuItem = this._appendMenuItem(_("New Window"));
         this._newWindowMenuItem._refWindow = windows[0];
-        this._newWindowMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+        this._newWindowMenuItem.connect('activate', (actor, event) => {
             let app = this._source.app;
             app.open_new_window(-1);
             this.emit('activate-window', actor._refWindow);
             this.close();
-        }));
+        });
     },
 
     _appendOpen: function () {
 
         // Add 'open' button (only if there are no open windows)
         this._openWindowMenuItem = this._appendMenuItem(_("Open"));
-        this._openWindowMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+        this._openWindowMenuItem.connect('activate', (actor, event) => {
             let app = this._source.app;
             app.open_new_window(-1);
             this.emit('activate-window', null);
             this.close();
-        }));
+        });
     },
 
     _appendFavorites: function (app) {
@@ -286,7 +281,7 @@ const AtomAppIconMenu = new Lang.Class({
         // Add 'add/remove favorites' button
         let isFavorite = AppFavorites.getAppFavorites().isFavorite(app.get_id());
         this._toggleFavoriteMenuItem = this._appendMenuItem(isFavorite ? _("Remove from Favorites") : _("Add to Favorites"));
-        this._toggleFavoriteMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+        this._toggleFavoriteMenuItem.connect('activate', (actor, event) => {
             let app = this._source.app;
             let favs = AppFavorites.getAppFavorites();
             let isFavorite = favs.isFavorite(app.get_id());
@@ -296,21 +291,21 @@ const AtomAppIconMenu = new Lang.Class({
                 favs.addFavorite(app.get_id());
             }
             this.close();
-        }));
+        });
     },
 
     _appendQuit: function () {
 
         // Add 'quit' button
         this._quitMenuItem = this._appendMenuItem(_("Quit"))
-        this._quitMenuItem.connect('activate', Lang.bind(this, function (actor, event) {
+        this._quitMenuItem.connect('activate', (actor, event) => {
             let app = this._source.app;
             let wins = app.get_windows();
             for (let i=0; i < wins.length; i++) {
                 wins[i].delete(global.get_current_time());
             }
             this.close();
-        }));
+        });
     },
 
     _appendSeparator: function () {

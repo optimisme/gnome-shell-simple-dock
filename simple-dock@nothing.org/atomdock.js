@@ -65,25 +65,19 @@ const AtomDock = new Lang.Class({
             track_hover: true
         });
 
-        this._box.connect("notify::hover", Lang.bind(this, this._hoverChanged));
-        this._box.connect('scroll-event', Lang.bind(this, this.onScrollEvent));
+        this._box.connect("notify::hover", () => { this._hoverChanged(); });
+        this._box.connect('scroll-event', (actor, event) => { this.onScrollEvent(actor, event); });
 
         this._signalHandler = new Convenience.GlobalSignalHandler();
         this._signalHandler.push(
             [
-                this.dash,
-                'menu-closed',
-                Lang.bind(this, function () { this._box.sync_hover(); })
+                this.dash, 'menu-closed', () => { this._box.sync_hover(); }
             ],
             [
-                global.screen,
-                'monitors-changed',
-                Lang.bind(this, this._resetPosition)
+                global.screen, 'monitors-changed', () => { this._resetPosition(); }
             ],
             [
-                St.ThemeContext.get_for_stage(global.stage),
-                'changed',
-                Lang.bind(this, this._onThemeChanged)
+                St.ThemeContext.get_for_stage(global.stage), 'changed', () => { this._onThemeChanged(); }
             ]
         );
 
@@ -95,35 +89,23 @@ const AtomDock = new Lang.Class({
          * (slide in and slideout) doesn't trigger anymore an update of the
          * input regions. Force the update manually.
          */
-        this.actor.connect('notify::allocation',
-            Lang.bind(Main.layoutManager,
-                Main.layoutManager._queueUpdateRegions
-        ));
+        this.actor.connect('notify::allocation', () => { Main.layoutManager._queueUpdateRegions(); });
 
-        this.dash._container.connect('allocation-changed',
-            Lang.bind(this, this._updateStaticBox)
-        );
+        this.dash._container.connect('allocation-changed', () => { this._updateStaticBox(); });
 
         // Reset position when icon size changed
-        this.dash.connect('icon-size-changed',
-            Lang.bind(this, this._updateYPosition)
-        );
+        this.dash.connect('icon-size-changed', () => { this._updateYPosition(); });
 
         // sync hover after a popupmenu is closed
-        this.dash.connect('menu-closed', Lang.bind(this, this._box.sync_hover));
+        this.dash.connect('menu-closed', () => { this._box.sync_hover(); });
 
         // Dash accessibility
-        Main.ctrlAltTabManager.addGroup(this.dash.actor, _("Dock"),
-            'user-bookmarks-symbolic',
-            { focusCallback: Lang.bind(this, this._onAccessibilityFocus) }
-        );
+        Main.ctrlAltTabManager.addGroup(this.dash.actor, _("Dock"), 'user-bookmarks-symbolic', { focusCallback: () => { this._onAccessibilityFocus(); }});
 
         /* Delay operations that require the shell to be fully loaded and with
         * user theme applied.
         */
-        this._realizeId = this.actor.connect('realize',
-            Lang.bind(this, this._initialize)
-        );
+        this._realizeId = this.actor.connect('realize', () => { this._initialize(); });
 
         // Add dash container actor and the container to the Chrome
         this.actor.set_child(this._box);
@@ -279,11 +261,11 @@ const AtomDock = new Lang.Class({
          * is not restored until the mouse move again (sync_hover has no effect).
          */
         if (Main.wm._workspaceSwitcherPopup) {
-            Mainloop.timeout_add(500, Lang.bind(this, function() {
+            Mainloop.timeout_add(500, () => {
                 this._box.sync_hover();
                 this._hoverChanged();
                 return false;
-            }));
+            });
         } else if (this._autoIntelliStatus) {
             if (this._box.hover) {
                 this._showHover();
@@ -366,17 +348,11 @@ const AtomDock = new Lang.Class({
             delay: delay,
             transition: 'easeOutQuad',
 
-            onStart:  Lang.bind(this, function() {
-                this._animStatus.start();
-            }),
+            onStart: () => { this._animStatus.start(); },
 
-            onOverwrite : Lang.bind(this, function() {
-                this._animStatus.clear();
-            }),
+            onOverwrite : () => { this._animStatus.clear(); },
 
-            onComplete: Lang.bind(this, function() {
-                this._animStatus.end();
-            })
+            onComplete: () => { this._animStatus.end(); }
         });
     },
 
@@ -388,17 +364,11 @@ const AtomDock = new Lang.Class({
             delay: delay,
             transition: 'easeOutQuad',
 
-            onStart:  Lang.bind(this, function() {
-                this._animStatus.start();
-            }),
+            onStart: () => { this._animStatus.start(); },
 
-            onOverwrite : Lang.bind(this, function() {
-                this._animStatus.clear();
-            }),
+            onOverwrite : () => { this._animStatus.clear(); },
 
-            onComplete: Lang.bind(this, function() {
-                this._animStatus.end();
-            })
+            onComplete: () => { this._animStatus.end(); }
         });
     },
 
