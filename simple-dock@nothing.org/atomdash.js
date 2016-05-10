@@ -519,7 +519,7 @@ const AtomDash = new Lang.Class({
                 Mainloop.source_remove(this._showLabelTimeoutId);
                 this._showLabelTimeoutId = 0;
             }
-            item.hideLabel();
+            //item.hideLabel();
         } else {
             this.emit('menu-closed');
         }

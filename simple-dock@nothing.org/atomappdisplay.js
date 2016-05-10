@@ -70,7 +70,7 @@ const AtomAppIcon = new Lang.Class({
 
         for (let i = 0; i < windows.length; i++) {
             let w = windows[i];
-            print(w);
+            // print(w); 
             if (w.get_workspace() == current_workspace && w.showing_on_its_workspace()){
                 w.set_icon_geometry(rect);
                 if (minimize) { w.minimize(); }
@@ -235,6 +235,8 @@ const AtomAppIconMenu = new Lang.Class({
     },
 
     _appendActions: function (appInfo, actions, windows) {
+
+        let i = 0;
 
         // Add custom application 'actions'
         this._actionMenuItems = new Array(actions.length);
