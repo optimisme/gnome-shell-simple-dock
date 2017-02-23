@@ -97,7 +97,9 @@ const GlobalSignalHandler = new Lang.Class({
 
     disconnect: function() {
         for (let label in this._signals) {
-            this.disconnectWithLabel(label);
+            if (this._signals.hasOwnProperty(label)) {
+                this.disconnectWithLabel(label);
+            }
         }
     },
 

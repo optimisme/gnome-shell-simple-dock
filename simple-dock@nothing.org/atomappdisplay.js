@@ -235,9 +235,7 @@ const AtomAppIconMenu = new Lang.Class({
     },
 
     _appendActions: function (appInfo, actions, windows) {
-
-        let i = 0;
-
+        let i;
         // Add custom application 'actions'
         this._actionMenuItems = new Array(actions.length);
         for (i = 0; i < actions.length; i++) {
@@ -299,7 +297,7 @@ const AtomAppIconMenu = new Lang.Class({
     _appendQuit: function () {
 
         // Add 'quit' button
-        this._quitMenuItem = this._appendMenuItem(_("Quit"))
+        this._quitMenuItem = this._appendMenuItem(_("Quit"));
         this._quitMenuItem.connect('activate', (actor, event) => {
             let app = this._source.app;
             let wins = app.get_windows();
