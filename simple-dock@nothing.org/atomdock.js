@@ -398,8 +398,13 @@ const AtomDock = new Lang.Class({
             goDn = true;
             break;
         }
-        if (goUp) { diff = -1; }
-        if (goDn) { diff = +1; }
+        var diff = 0;
+        if (goUp) {
+            diff = -1;
+        }
+        if (goDn) {
+            diff = +1;
+        }
 
         // Get running windows (and active one)
         let children = this.getRunningWindows();
@@ -425,10 +430,9 @@ const AtomDock = new Lang.Class({
     getRunningWindows: function () {
         let apps = Shell.AppSystem.get_default().get_running().sort();
         let windows = [];
-        let counter = 0;
-
+        let counter;
         for (counter = 0; counter < apps.length; counter = counter + 1) {
-            appWindows = apps[counter].get_windows().filter(function(w) { return !w.skip_taskbar; }).sort(function (a, b) {
+            var appWindows = apps[counter].get_windows().filter(function(w) { return !w.skip_taskbar; }).sort(function (a, b) {
                 return a.get_stable_sequence() - b.get_stable_sequence();
             });
             windows = windows.concat(appWindows);

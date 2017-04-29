@@ -229,7 +229,6 @@ const AtomDashActor = new Lang.Class({
 
         this.set_allocation(box, flags);
 
-        let t;
         let [appIcons, showAppsButton] = this.get_children();
         let [t, showAppsNatWidth] = showAppsButton.get_preferred_width(availWidth);
 
@@ -254,13 +253,15 @@ const AtomDashActor = new Lang.Class({
         // as our natural height, so we chain up to StWidget (which
         // then calls BoxLayout), but we only request the showApps
         // button as the minimum size
-
         let t;
-        let [t, natWidth] = this.parent(forHeight);
+        let natWidth;
+        let showAppsButton;
+        let minWidth;
+        [t, natWidth] = this.parent(forHeight);
         let themeNode = this.get_theme_node();
         let adjustedForHeight = themeNode.adjust_for_height(forHeight);
-        let [t, showAppsButton] = this.get_children();
-        let [minWidth, t] = showAppsButton.get_preferred_width(adjustedForHeight);
+        [t, showAppsButton] = this.get_children();
+        [minWidth, t] = showAppsButton.get_preferred_width(adjustedForHeight);
 
         [minWidth, t] = themeNode.adjust_preferred_width(minWidth, natWidth);
 
@@ -700,7 +701,9 @@ const AtomDash = new Lang.Class({
         let newApps = [];
 
         for (let id in favorites) {
-            newApps.push(favorites[id]);
+            if (favorites.hasOwnProperty(id)) {
+                newApps.push(favorites[id]);
+            }
         }
 
         for (let i = 0; i < running.length; i++) {
@@ -1024,8 +1027,8 @@ const AtomDash = new Lang.Class({
 
     // Keep ShowAppsButton status in sync with the overview status
     _syncShowAppsButtonToggled: function() {
-        let status = Main.overview.viewSelector._showAppsButton.checked;
-        this.showAppsButton.checked = status;
+        let showStatus = Main.overview.viewSelector._showAppsButton.checked;
+        this.showAppsButton.checked = showStatus;
     },
 
     setShowAppsButton: function(show) {
