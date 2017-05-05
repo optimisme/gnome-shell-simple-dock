@@ -101,7 +101,7 @@ function buildPrefsWidget() {
     });
 	infoLabel.set_justify(Gtk.Justification.CENTER);
 
-    grid = new Gtk.Grid({ column_spacing: 25, halign: Gtk.Align.CENTER, margin: 10, row_spacing: 10 });
+    var grid = new Gtk.Grid({ column_spacing: 25, halign: Gtk.Align.CENTER, margin: 10, row_spacing: 10 });
     grid.set_border_width(15);
 
     grid.attach(showAppsLabel,      0, 1, 1, 1);
